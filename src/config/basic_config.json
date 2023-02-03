@@ -1,0 +1,22 @@
+{
+    "model" : {
+
+        "typeA" : "proba",
+        "typeB" : "snake",
+
+        "nb_control_points" : 10
+
+    },
+
+    "data" : {
+        "train_set" : {
+            "path_to_data" : "/pathtodata",
+            "batchsize" : 16
+        },
+
+        "test_set" : {
+            "path_to_data" : "/pathtodata",
+            "batchsize" : 16
+        }  
+    }
+}
