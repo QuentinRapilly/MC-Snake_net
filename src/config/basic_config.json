@@ -8,10 +8,29 @@
 
     },
 
+    "optimizer" : {
+        "lr" : 0.001,
+        "weight_decay" : 0.01
+    },
+
+    "criterion" : {
+        "gamma" : 0.2
+    },
+
+    "active_contour" : {
+        "M" : 10
+    },
+
     "data" : {
+
+        "nb_channels" : 3,
+
+        "image_size" : [256,256],
+
         "train_set" : {
             "path_to_data" : "/pathtodata",
-            "batchsize" : 16
+            "batchsize" : 16,
+            "nb_epochs" : 100
         },
 
         "test_set" : {
