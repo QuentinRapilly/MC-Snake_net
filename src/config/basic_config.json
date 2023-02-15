@@ -1,7 +1,7 @@
 {
     "model" : {
 
-        "typeA" : "proba",
+        "typeA" : "classic",
         "typeB" : "snake",
 
         "nb_control_points" : 10
@@ -23,18 +23,19 @@
 
     "data" : {
 
-        "nb_channels" : 3,
+        "nb_channels" : 1,
 
-        "image_size" : [256,256],
+        "image_size" : [512,512],
 
         "train_set" : {
-            "path_to_data" : "/pathtodata",
+            "path_to_data" : "/home/qrapilly/Documents/Code/MesProjets/Data/Quentin_data/Texture/",
             "batchsize" : 16,
-            "nb_epochs" : 100
+            "nb_epochs" : 20,
+            "print_every_nb_epochs" : 1
         },
 
         "test_set" : {
-            "path_to_data" : "/pathtodata",
+            "path_to_data" : "/home/qrapilly/Documents/Code/MesProjets/Data/Quentin_data/Texture/",
             "batchsize" : 16
         }  
     }

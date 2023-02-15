@@ -40,9 +40,7 @@ class Decoder(nn.Module):
     def forward(self, x, encoder_features, verbose = False):
         for i in range(len(self.chs)-1):
             x = self.upconvs[i](x)
-            print("Shape after upconv : {}".format(x.shape))
             x = torch.cat([x, encoder_features[i]], dim=1)
-            print("Shape after concat : {}".format(x.shape))
             x = self.dec_blocks[i](x)
             if verbose : 
                 print("Encoder, step {}, shape = {}".format(i,x.shape))
@@ -94,10 +92,10 @@ class MCSnakeNet(nn.Module):
         enc_ftrs = self.encoder(x , verbose=verbose)
 
 
-        outA = self.decoderA(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = True)
+        outA = self.decoderA(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
         outA = self.headA(outA)
 
-        outB = self.decoderB(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = True)
+        outB = self.decoderB(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
         outB = self.headB(outB)
 
         if self.apply_sigmoid:
