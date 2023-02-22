@@ -3,12 +3,14 @@
 from shapely.geometry import Polygon, Point
 import torch
 from torch.nn.functional import pad
+import matplotlib.pyplot as plt
+from cv2 import findContours, RETR_EXTERNAL, CHAIN_APPROX_NONE
+import numpy as np
 
 # Changer la seconde fonction pour utiliser cv2.findContours(img, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE)
 # Changer les deux fonctions pour passer en multiobjet
 
 def contour_to_mask(contour_samples : torch.tensor, W : int, H : int):
-    print(contour_samples.shape)
     poly = Polygon(contour_samples)
     mask = torch.zeros((W,H))
 
@@ -19,7 +21,23 @@ def contour_to_mask(contour_samples : torch.tensor, W : int, H : int):
 
     return mask
 
-def mask_to_contour(mask : torch.tensor, add_last = False, verbose = False):
+
+def mask_to_contour(mask : torch.tensor, only_one = True , add_last = False, verbose = False):
+    contours, _ = findContours(mask.numpy().astype(np.uint8), mode=RETR_EXTERNAL, method=CHAIN_APPROX_NONE)
+
+    if len(contours)==0:
+        return torch.zeros((0,2))
+    
+    if only_one :
+        contour = contours[np.argmax([len(contour) for contour in contours])]
+        return torch.squeeze(torch.tensor(contour))
+    
+    return contours
+
+def former_mask_to_contour(mask : torch.tensor, add_last = False, verbose = False):
+
+    plt.imshow(mask)
+    plt.show()
 
     W, H = mask.shape
 
@@ -94,8 +112,6 @@ def mask_to_contour(mask : torch.tensor, add_last = False, verbose = False):
 
 
 if __name__ == "__main__":
-
-    import matplotlib.pyplot as plt
 
     W, H = 50, 50
 

@@ -19,6 +19,7 @@ from snake_representation.snake_tools import sample_contour
 def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
 
     running_loss = 0.0
+    resizing_vect = torch.tensor([[[W, H]]])
 
     for _, batch in enumerate(train_loader):
         imgs, GT_masks = batch
@@ -28,11 +29,11 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
         tic = time()
         classic_mask, snake_cp = model(imgs)
 
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
-        # TODO : multiplier les CP par W, H pour les placer aux bons endroits
 
-        print(snake_cp.shape)
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))*resizing_vect
+
+        print("Min : {}, max : {}".format(torch.min(snake_cp), torch.max(snake_cp)))
 
         if verbose :
             print("Forward pass processed in {}s".format(time()-tic))
@@ -45,6 +46,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
             classic_contour = [mask_to_contour(mask>0.5) for mask in classic_mask]
 
         if verbose :
+
             print("Contour computed in {}s".format(time()-tic))
             tic = time()
 
@@ -52,6 +54,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
         snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M) for i,cp in enumerate(reshaped_cp)]
 
         if verbose :
+            
             print("Contour sampled in {}s".format(time()-tic))
             tic = time()
 
@@ -62,10 +65,13 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
             print("Mask computed in {}s".format(time()-tic))
             tic = time()
 
-
         loss = criterion(GT_masks, GT_contour, snake_size_of_GT, snake_size_of_classic, snake_mask, classic_contour, classic_mask)
         loss.backward()
         optimizer.step()
+
+        if verbose :
+            print("Loss computed in {}s".format(time()-tic))
+            tic = time()
 
         running_loss += loss.item()
     
@@ -107,7 +113,7 @@ if __name__ == "__main__" :
 
     optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_config["lr"], weight_decay=optimizer_config["weight_decay"])
 
-    criterion = MutualConsistency(gamma=criterion_config["gamma"])
+    criterion = MutualConsistency(gamma=criterion_config["gamma"], verbose = True)
 
 
     loss_list = list()
