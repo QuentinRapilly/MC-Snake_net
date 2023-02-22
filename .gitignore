@@ -1,1 +1,3 @@
 */models_storage
+/wandb
+/container/*.sif

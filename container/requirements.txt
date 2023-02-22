@@ -1,0 +1,4 @@
+opencv-python
+matplotlib==3.6.2
+shapely==1.8.1
+wandb==0.13.5

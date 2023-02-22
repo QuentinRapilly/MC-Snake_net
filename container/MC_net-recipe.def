@@ -1,0 +1,12 @@
+Bootstrap : docker
+From : pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime
+
+%files
+   requirements.txt /root/requirements.txt
+
+%post
+    # necessaire pour opencv
+    apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+    
+    pip install -r /root/requirements.txt
+
