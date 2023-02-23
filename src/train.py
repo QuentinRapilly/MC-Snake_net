@@ -3,9 +3,10 @@ from torch.utils.data import DataLoader
 import argparse
 import json
 from time import time
+import wandb
 
 
-from datasets.mcsnake_dataset import MCSnakeDataset 
+#from datasets.mcsnake_dataset import MCSnakeDataset 
 from datasets.texture_dataset import TextureDataset
 
 from DL_models.mcsnake_net import MCSnakeNet
@@ -81,7 +82,12 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
 
 if __name__ == "__main__" :
 
+    # TODO : gerer partout l'utilisation de CUDA, logger les infos sur la loss etc avec wandb, 
+    # sauvergarder le modele a la fin du training, creer une fonction de test
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"Current device : {device}")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, help="Configuration file", default="./src/config/basic_config.json")
@@ -93,6 +99,9 @@ if __name__ == "__main__" :
 
     train_config = config_dic["data"]["train_set"]
     test_config = config_dic["data"]["test_set"]
+    settings_config = config_dic["settings"]
+
+    verbose = settings_config["verbose"]
 
     model_config = config_dic["model"]
     optimizer_config = config_dic["optimizer"]
@@ -101,20 +110,35 @@ if __name__ == "__main__" :
 
     W, H = config_dic["data"]["image_size"]
 
-    train_set = TextureDataset(path=train_config["path_to_data"])
-    test_set = TextureDataset(path=train_config["path_to_data"], subset=2)
+    train_set = TextureDataset(path=train_config["path_to_data"], device = device)
+    test_set = TextureDataset(path=train_config["path_to_data"], subset=2, device = device)
 
     train_loader = DataLoader(train_set, batch_size=train_config["batchsize"])
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])
 
 
     enc_chs=(config_dic["data"]["nb_channels"],64,128,256,512,1024)
-    model = MCSnakeNet(enc_chs=enc_chs,typeA=model_config["typeA"], typeB=model_config["typeB"], nb_control_points=model_config["nb_control_points"], img_shape=(W,H))
+    model = MCSnakeNet(enc_chs=enc_chs,typeA=model_config["typeA"], typeB=model_config["typeB"], nb_control_points=model_config["nb_control_points"], img_shape=(W,H)).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_config["lr"], weight_decay=optimizer_config["weight_decay"])
 
-    criterion = MutualConsistency(gamma=criterion_config["gamma"], verbose = True)
+    criterion = MutualConsistency(gamma=criterion_config["gamma"], device=device, verbose = verbose)
 
+
+
+    # Tracking of the loss
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="MC-snake_net",
+        
+        # track hyperparameters and run metadata
+        config={
+        "learning_rate": optimizer_config["lr"],
+        "architecture": "UNET",
+        "dataset": "Texture",
+        "epochs": train_config["nb_epochs"],
+        }
+    )
 
     loss_list = list()
 
@@ -122,8 +146,14 @@ if __name__ == "__main__" :
 
     for epoch in range(train_config["nb_epochs"]):
 
-        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose= True)
+        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose)
         loss_list.append(loss)
+
+        wandb.log({"loss": loss})
         
         if epoch%epoch_modulo == epoch_modulo-1 :
             print("Epoch nb {} ; loss : {}".format(epoch, loss))
+
+    wandb.finish()
+
+    torch.save(model.state_dict(), model_config["save_path"])

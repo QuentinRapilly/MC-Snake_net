@@ -7,7 +7,7 @@ from matplotlib.pyplot import imread
 
 class TextureDataset(Dataset):
 
-    def __init__(self, path, greyscale = True, subset = 1) -> None:
+    def __init__(self, path, greyscale = True, subset = 1, device = "cpu") -> None:
         super().__init__()
         self.path = path
         self.greyscale = greyscale
@@ -23,6 +23,8 @@ class TextureDataset(Dataset):
 
         self.imgs_names = listdir(self.imgs_path)
 
+        self.device = device
+
     def __getitem__(self, index):
         img_name = self.imgs_names[index]
         img_path = join(self.imgs_path, img_name)
@@ -34,7 +36,7 @@ class TextureDataset(Dataset):
         mask_path = join(self.masks_path, mask_idx+".bmp")
         mask = imread(mask_path)
 
-        return torch.unsqueeze(torch.tensor(img)/255,0), torch.tensor(mask)/255
+        return torch.unsqueeze(torch.tensor(img)/255,0).to(self.device), torch.tensor(mask).to(self.device)/255
 
     def __len__(self):
         return len(self.imgs_names)

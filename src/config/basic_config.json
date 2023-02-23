@@ -1,10 +1,17 @@
 {
+    "settings" : {
+        "verbose" : true
+        
+    },
+
     "model" : {
 
         "typeA" : "classic",
         "typeB" : "snake",
 
-        "nb_control_points" : 10
+        "nb_control_points" : 10,
+
+        "save_path" : "/home/qrapilly/Documents/Code/MesProjets/MC-Snake_net/src/models_storage"
 
     },
 
