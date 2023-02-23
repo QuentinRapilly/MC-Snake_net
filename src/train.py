@@ -17,10 +17,10 @@ from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
 from snake_representation.snake_tools import sample_contour
 
 
-def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
+def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, device = "cpu"):
 
     running_loss = 0.0
-    resizing_vect = torch.tensor([[[W, H]]])
+    resizing_vect = torch.tensor([[[W, H]]]).to(device)
 
     for _, batch in enumerate(train_loader):
         imgs, GT_masks = batch
@@ -30,11 +30,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
         tic = time()
         classic_mask, snake_cp = model(imgs)
 
-
-
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))*resizing_vect
-
-        print("Min : {}, max : {}".format(torch.min(snake_cp), torch.max(snake_cp)))
 
         if verbose :
             print("Forward pass processed in {}s".format(time()-tic))
@@ -43,16 +39,16 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
         classic_mask = torch.squeeze(classic_mask)
 
         with torch.no_grad():
-            GT_contour = [mask_to_contour(mask) for mask in GT_masks]
-            classic_contour = [mask_to_contour(mask>0.5) for mask in classic_mask]
+            GT_contour = [mask_to_contour(mask).to(device) for mask in GT_masks]
+            classic_contour = [mask_to_contour(mask>0.5).to(device) for mask in classic_mask]
 
         if verbose :
 
             print("Contour computed in {}s".format(time()-tic))
             tic = time()
 
-        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M).to(device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M).to(device) for i,cp in enumerate(reshaped_cp)]
 
         if verbose :
             
@@ -60,7 +56,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False):
             tic = time()
 
         with torch.no_grad():
-            snake_mask = torch.stack([contour_to_mask(contour, W, H) for contour in snake_size_of_GT])
+            snake_mask = torch.stack([contour_to_mask(contour, W, H).to(device) for contour in snake_size_of_GT])
 
         if verbose :
             print("Mask computed in {}s".format(time()-tic))
@@ -146,7 +142,7 @@ if __name__ == "__main__" :
 
     for epoch in range(train_config["nb_epochs"]):
 
-        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose)
+        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose, device=device)
         loss_list.append(loss)
 
         wandb.log({"loss": loss})
