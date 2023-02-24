@@ -1,7 +1,7 @@
 import torch
 from .basis_function import create_periodic_exponential_spline
 
-def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, basis_function : str = "exponential_spline"):
+def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, basis_function : str = "exponential_spline", device = "cpu"):
 
     if nb_samples == 0 :
         return torch.zeros((0,2))
@@ -16,7 +16,9 @@ def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, bas
     with torch.no_grad():
         t = torch.unsqueeze(torch.linspace(0, 1-1/nb_samples, nb_samples),1)
         m = torch.unsqueeze(torch.arange(start=0, end=M),0)
-        weigth = fct(M*t-m)[:,:,None]
+        weigth = fct(M*t-m)[:,:,None].to(device)
+
+    #print("weigth : {}, cp : {}".format(weigth.device, control_points.device))
 
     prod = torch.unsqueeze(control_points,0)*weigth
 

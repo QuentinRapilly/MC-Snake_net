@@ -20,7 +20,7 @@ from snake_representation.snake_tools import sample_contour
 def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, device = "cpu"):
 
     running_loss = 0.0
-    resizing_vect = torch.tensor([[[W, H]]]).to(device)
+    rescaling_vect = torch.tensor([[[W, H]]]).to(device)
 
     for _, batch in enumerate(train_loader):
         imgs, GT_masks = batch
@@ -30,7 +30,9 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
         tic = time()
         classic_mask, snake_cp = model(imgs)
 
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))*resizing_vect
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+        print("Device of reshaped : {}, device of rescaling : {}".format(reshaped_cp.device, rescaling_vect.device))
+        reshaped_cp = reshaped_cp*rescaling_vect
 
         if verbose :
             print("Forward pass processed in {}s".format(time()-tic))
@@ -40,15 +42,15 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
 
         with torch.no_grad():
             GT_contour = [mask_to_contour(mask).to(device) for mask in GT_masks]
-            classic_contour = [mask_to_contour(mask>0.5).to(device) for mask in classic_mask]
+            classic_contour = [mask_to_contour((mask>0.5)).to(device) for mask in classic_mask]
 
         if verbose :
 
             print("Contour computed in {}s".format(time()-tic))
             tic = time()
 
-        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M).to(device) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M).to(device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
 
         if verbose :
             
@@ -142,7 +144,8 @@ if __name__ == "__main__" :
 
     for epoch in range(train_config["nb_epochs"]):
 
-        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose, device=device)
+        print(f"Starting epoch {epoch}")
+        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
         loss_list.append(loss)
 
         wandb.log({"loss": loss})

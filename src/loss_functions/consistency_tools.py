@@ -22,8 +22,8 @@ def contour_to_mask(contour_samples : torch.tensor, W : int, H : int):
 
 
 def mask_to_contour(mask : torch.tensor, only_one = True , add_last = False, verbose = False):
-    
-    contours, _ = findContours(mask.numpy().astype(np.uint8), mode=RETR_EXTERNAL, method=CHAIN_APPROX_NONE)
+    np_mask = mask.cpu().numpy()
+    contours, _ = findContours(np_mask.astype(np.uint8), mode=RETR_EXTERNAL, method=CHAIN_APPROX_NONE)
 
     if len(contours)==0:
         return torch.zeros((0,2))
