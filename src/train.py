@@ -31,7 +31,6 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
         classic_mask, snake_cp = model(imgs)
 
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
-        print("Device of reshaped : {}, device of rescaling : {}".format(reshaped_cp.device, rescaling_vect.device))
         reshaped_cp = reshaped_cp*rescaling_vect
 
         if verbose :
