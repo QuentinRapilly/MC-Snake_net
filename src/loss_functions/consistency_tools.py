@@ -3,7 +3,7 @@
 from shapely.geometry import Polygon, Point
 import torch
 from torch.nn.functional import pad
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from cv2 import findContours, RETR_EXTERNAL, CHAIN_APPROX_NONE
 import numpy as np
 
@@ -35,23 +35,13 @@ def contour_to_mask(contour_samples : torch.tensor, W : int, H : int, device = "
     d = torch.unsqueeze(v1[:,1] - v2[:,1],0)
     e = torch.unsqueeze(v1[:,1]*v2[:,0] - v1[:,0]*v2[:,1],0)
 
-    u_y = torch.unsqueeze(torch.arange(0, H, 1),1)
-    u_x = torch.unsqueeze(torch.arange(0, W, 1),1)
+    u_y = torch.unsqueeze(torch.arange(0, H, 1),1).to(device)
+    u_x = torch.unsqueeze(torch.arange(0, W, 1),1).to(device)
 
     cdt1 =  (a + u_y*u_y - b*u_y < 0)*1.
     cdt2 = ((torch.unsqueeze(c*u_y,0) - torch.unsqueeze(d*u_x,1) + torch.unsqueeze(e, 0)) < 0)*1.
 
-    plt.subplot(221)
-    plt.imshow(cdt1.T)
-    plt.subplot(222)
-    plt.imshow(cdt2[:,:,0:3])
-    plt.subplot(223)
-
-
     S = torch.sum(torch.unsqueeze(cdt1,0)*cdt2, dim=2)
-
-    plt.imshow(S)
-    plt.show()
 
     return (S % 2) == 1
 
@@ -82,9 +72,9 @@ if __name__ == "__main__":
     mask = contour_to_mask_test(contour, W, H)
 
 
-    plt.imshow(mask)
+    #plt.imshow(mask)
     #plt.plot(contour[0,:],contour[1,:])
 
-    plt.show()
+    #plt.show()
 
 

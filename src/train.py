@@ -58,7 +58,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
             tic = time()
 
         with torch.no_grad():
-            snake_mask = torch.stack([contour_to_mask(contour, W, H).to(device) for contour in snake_size_of_GT])
+            snake_mask = torch.stack([contour_to_mask(contour, W, H, device = device) for contour in snake_size_of_GT])
 
         if verbose :
             print("Mask computed in {}s".format(time()-tic))
