@@ -20,9 +20,13 @@ from snake_representation.snake_tools import sample_contour
 def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, device = "cpu"):
 
     running_loss = 0.0
-    rescaling_vect = torch.tensor([[[W, H]]]).to(device)
+    rescaling_vect = torch.tensor([[[1/W, 1/H]]]).to(device)
+
+    nb_batchs = 0
 
     for _, batch in enumerate(train_loader):
+        nb_batchs += 1
+
         imgs, GT_masks = batch
 
         optimizer.zero_grad()
@@ -40,8 +44,8 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
         classic_mask = torch.squeeze(classic_mask)
 
         with torch.no_grad():
-            GT_contour = [mask_to_contour(mask).to(device) for mask in GT_masks]
-            classic_contour = [mask_to_contour((mask>0.5)).to(device) for mask in classic_mask]
+            GT_contour = [mask_to_contour(mask).to(device)*rescaling_vect for mask in GT_masks]
+            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_vect for mask in classic_mask]
 
         if verbose :
 
@@ -73,7 +77,7 @@ def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, d
 
         running_loss += loss.item()
     
-    return running_loss
+    return running_loss / nb_batchs
 
 
 

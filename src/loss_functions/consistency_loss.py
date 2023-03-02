@@ -74,4 +74,4 @@ class MutualConsistency(nn.Module):
 
         # TODO : /!\ Bien verifier le bon fonctionnement de cette loss
 
-        return (self.dice(classic_mask, ground_truth_mask) + seg_tot) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot)
+        return (1 - self.gamma)*(self.dice(classic_mask, ground_truth_mask) + seg_tot) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot)
