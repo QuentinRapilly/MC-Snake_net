@@ -20,7 +20,7 @@ from snake_representation.snake_tools import sample_contour
 def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, device = "cpu"):
 
     running_loss = 0.0
-    rescaling_vect = torch.tensor([[[1/W, 1/H]]]).to(device)
+    rescaling_vect = torch.tensor([1/W, 1/H]).to(device)
 
     nb_batchs = 0
 

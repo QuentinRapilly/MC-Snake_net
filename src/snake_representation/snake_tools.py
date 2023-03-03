@@ -4,7 +4,7 @@ from .basis_function import create_periodic_exponential_spline
 def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, basis_function : str = "exponential_spline", device = "cpu"):
 
     if nb_samples == 0 :
-        return torch.zeros((0,2))
+        return torch.zeros((0,2)).to(device)
 
     possible_basis_functions = ["exponential_spline"]
 
