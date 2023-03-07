@@ -122,14 +122,14 @@ Using this method, one can easily train a snake control points model using eithe
 
 Our final loss will be :
 
-$Loss = \underbrace{L_{net}(P_A,Y) + L_{snake}(c_{GT},b_{GT})}_{L_{seg}} + \lambda \times \underbrace{L_{net}(P_A,Y_B) + L_{snake}(a_{pred},b_{pred})}_{L_{consistency}}$
+$Loss = \gamma \times \underbrace{L_{proda}(P_A,Y) + L_{snake}(c_{GT},b_{GT})}_{L_{seg}} + (1-\gamma) \times (\underbrace{L_{proba}(P_A,Y_B) + L_{snake}(a_{pred},b_{pred})}_{L_{consistency}})$
 
 where :
 
 - $P_A = \sigma(f_{\theta_A}(X))$ is the probability map given by decoder A
 - $c_{GT} = (c_i)_{0\leq i \leq P_{GT}-1}$ is the contour extracted from $Y$ using the "Moore neighborhood algorithm"
 - $b_{GT} = (b_i)_{0\leq i \leq P_{GT}-1}$ is the sampling of the active contour predicted by $B$ to get $P_{GT}$ points ($s(\frac{i}{P_{GT}})_{0\leq i \leq P_{GT}-1}$).
-- $Y_B$ is the segmentation mask computed using the segmentation given by the snake predicted by $B$. **TODO : trouver comment l'extraire**
+- $Y_B$ is the segmentation mask computed using the segmentation given by the snake predicted by $B$.
 - $a_{pred} = (a_i)_{0\leq i \leq P_{pred}-1}$ is the contour extracted from the mask $(P_A>0.5)$ using the "Moore neighborhood algorithm".
 - $b_{pred} = (b_i)_{0\leq i \leq P_{pred}-1}$ is the sampling of the active contour predicted by $B$ to get $P_{pred}$ points ($s(\frac{i}{P_{pred}})_{0\leq i \leq P_{pred}-1}$).
 
