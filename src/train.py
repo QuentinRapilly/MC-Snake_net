@@ -109,7 +109,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
     
     N = len(train_loader)
 
-    tac_epoch = time
+    tac_epoch = time()
 
     print("Epoch terminated in {}s".format(tac_epoch-tic_epoch))
 
