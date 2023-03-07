@@ -18,7 +18,9 @@ from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
 from snake_representation.snake_tools import sample_contour
 
 
-def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H, verbose = False, device = "cpu", plot_in_wandb = True):
+def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H, verbose = False, device = "cpu", print_in_table = True):
+
+    tic_epoch = time()
 
     running_loss = 0.0
 
@@ -32,7 +34,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
     for k, batch in enumerate(train_loader):
 
-        print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)))
+        print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
 
         imgs, GT_masks = batch
 
@@ -96,20 +98,23 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
         running_loss += loss.item()
 
-        if plot_in_wandb and (k==0):
-            table = wandb.Table(columns=["Type of data", "Image"])
+        if print_in_table and (k==0):
 
-            GT_mask_img = wandb.Image(GT_masks[0], caption="ground truth mask")
-            table.add_data("ground truth mask", GT_mask_img)
 
-            predicted_mask_img = wandb.Image(classic_mask[0], caption="probability map")
-            table.add_data("probability map", predicted_mask_img)
+            plot_res = (wandb.Image(GT_masks[0], caption="ground truth mask"), wandb.Image(classic_mask[0], caption="probability map"),\
+                         wandb.Image(snake_mask[0], caption="snake mask"))
 
-            wandb.log({"Images" : table})
+        else : 
+            plot_res = None
     
     N = len(train_loader)
 
-    return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N, running_reference_mask_loss / N, running_reference_snake_loss / N
+    tac_epoch = time
+
+    print("Epoch terminated in {}s".format(tac_epoch-tic_epoch))
+
+    return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N,\
+        running_reference_mask_loss / N, running_reference_snake_loss / N, plot_res
 
 
 
@@ -177,17 +182,23 @@ if __name__ == "__main__" :
         }
     )
 
+    wandb_table = wandb.Table(columns=["epoch", "GT", "proba", "snake"])
+
     epoch_modulo = train_config["print_every_nb_epochs"]
 
     for epoch in range(train_config["nb_epochs"]):
 
         print(f"Starting epoch {epoch}")
-        loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss = \
+        loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, snake_loss=snake_loss, gamma=gamma, M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
 
         wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
                    "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
                       "reference_snake_loss" : reference_snake_loss})
+        
+        gt, proba, snake = plot_res
+        wandb_table.add_data(epoch, gt, proba, snake)
+        wandb.log({"Image table" : wandb_table})
         
 
     wandb.finish()
