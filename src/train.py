@@ -168,7 +168,7 @@ if __name__ == "__main__" :
 
 
     # Tracking of the loss
-    wandb.init(
+    run = wandb.init(
         # set the wandb project where this run will be logged
         project="MC-snake_net",
         
@@ -180,8 +180,6 @@ if __name__ == "__main__" :
         "epochs": train_config["nb_epochs"]
         }
     )
-
-    wandb_table = wandb.Table(columns=["epoch", "GT", "proba", "snake"])
 
     epoch_modulo = train_config["print_every_nb_epochs"]
 
@@ -195,13 +193,12 @@ if __name__ == "__main__" :
                    "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
                       "reference_snake_loss" : reference_snake_loss})
         
-        print("Type of plot res : {}".format(type(plot_res)))
         gt, proba, snake = plot_res
         gt = wandb.Image(gt, caption="GT")
         proba = wandb.Image(proba, caption="Probability map")
         snake = wandb.Image(snake, caption="Snake mask")
-        wandb_table.add_data(epoch, gt, proba, snake)
-        wandb.log({"Image table" : wandb_table})
+
+        wandb.log({"GT" : gt, "Probability map" : proba, "Snake mask" : snake})
         
 
     wandb.finish()
