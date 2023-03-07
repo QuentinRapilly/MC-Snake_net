@@ -27,12 +27,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
     running_consistency_mask_loss = 0
     running_consistency_snake_loss = 0
-
-    reference_mask_loss = mask_loss(classic_mask, GT_masks)
-    reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
-
-    consistency_mask_loss = mask_loss(classic_mask, snake_mask)
-    consistency_snake_loss
     
     rescaling_vect = torch.tensor([1/W, 1/H]).to(device)
 
