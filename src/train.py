@@ -57,14 +57,14 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
 
         tic_sample = time()
-        snake_size_of_GT = [sample_contour(cp*rescaling_vect, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp*rescaling_vect, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
         tac_sample = time()
             
 
         tic_mask = time()
         with torch.no_grad():
-            snake_mask = torch.stack([contour_to_mask(contour, W, H, device = device) for contour in snake_size_of_GT])
+            snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_size_of_GT])
         tac_mask = time()   
 
         tic_loss = time()
@@ -196,9 +196,9 @@ if __name__ == "__main__" :
                    "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
                       "reference_snake_loss" : reference_snake_loss})
         
-        gt, proba, snake = plot_res
-        wandb_table.add_data(epoch, gt, proba, snake)
-        wandb.log({"Image table" : wandb_table})
+        print("Type of plot res : {}".format(type(plot_res)))
+        #wandb_table.add_data(epoch, gt, proba, snake)
+        #wandb.log({"Image table" : wandb_table})
         
 
     wandb.finish()
