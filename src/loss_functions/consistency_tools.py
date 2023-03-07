@@ -43,7 +43,7 @@ def contour_to_mask(contour_samples : torch.tensor, W : int, H : int, device = "
 
     S = torch.sum(torch.unsqueeze(cdt1,0)*cdt2, dim=2)
 
-    return (S % 2) == 1
+    return ((S % 2) == 1)*1.
 
 
 

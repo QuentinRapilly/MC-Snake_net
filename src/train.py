@@ -30,7 +30,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
     running_consistency_mask_loss = 0
     running_consistency_snake_loss = 0
     
-    rescaling_vect = torch.tensor([1/W, 1/H]).to(device)
+    rescaling_vect = torch.tensor([W, H]).to(device)
+    rescaling_inv = torch.tensor([1/W, 1/H]).to(device)
 
     for k, batch in enumerate(train_loader):
 
@@ -45,20 +46,19 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
         tac_forward = time()
 
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
-        reshaped_cp = reshaped_cp*rescaling_vect
 
         classic_mask = torch.squeeze(classic_mask)
 
         tic_contour = time()
         with torch.no_grad():
-            GT_contour = [mask_to_contour(mask).to(device)*rescaling_vect for mask in GT_masks]
-            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_vect for mask in classic_mask]
+            GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
+            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
         tac_contour = time()
 
 
         tic_sample = time()
-        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_GT = [sample_contour(cp*rescaling_vect, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp*rescaling_vect, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
         tac_sample = time()
             
 
