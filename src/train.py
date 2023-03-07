@@ -98,12 +98,9 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
         running_loss += loss.item()
 
-        if print_in_table and (k==0):
 
-            plot_res = (GT_masks[0], classic_mask[0], snake_mask[0])
-
-        else : 
-            plot_res = None
+        if k == 0:
+            plot_res = (GT_masks[0], classic_mask[0], snake_mask[0]) if print_in_table else None
     
     N = len(train_loader)
 
