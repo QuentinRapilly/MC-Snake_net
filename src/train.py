@@ -101,7 +101,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
         if print_in_table and (k==0):
 
             plot_res = (GT_masks[0], classic_mask[0], snake_mask[0])
-            
             break
 
         else : 
@@ -197,8 +196,12 @@ if __name__ == "__main__" :
                       "reference_snake_loss" : reference_snake_loss})
         
         print("Type of plot res : {}".format(type(plot_res)))
-        #wandb_table.add_data(epoch, gt, proba, snake)
-        #wandb.log({"Image table" : wandb_table})
+        gt, proba, snake = plot_res
+        gt = wandb.Image(gt, caption="GT")
+        proba = wandb.Image(proba, caption="Probability map")
+        snake = wandb.Image(snake, caption="Snake mask")
+        wandb_table.add_data(epoch, gt, proba, snake)
+        wandb.log({"Image table" : wandb_table})
         
 
     wandb.finish()
