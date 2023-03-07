@@ -101,7 +101,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
         if print_in_table and (k==0):
 
             plot_res = (GT_masks[0], classic_mask[0], snake_mask[0])
-            break
 
         else : 
             plot_res = None
