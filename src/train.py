@@ -100,9 +100,9 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
 
         if print_in_table and (k==0):
 
-            print("Shape : {}, type : {}".format(snake_mask[0].shape, snake_mask[0].dtype))
-            plot_res = (wandb.Image(GT_masks[0], caption="ground truth mask"), wandb.Image(classic_mask[0], caption="probability map"),\
-                         wandb.Image(snake_mask[0], caption="snake mask"))
+            plot_res = (GT_masks[0], classic_mask[0], snake_mask[0])
+            
+            break
 
         else : 
             plot_res = None
