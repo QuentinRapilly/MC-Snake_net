@@ -10,7 +10,9 @@ class DiceLoss(nn.Module):
     def forward(self, inputs, targets, smooth=1):
         
         #comment out if your model contains a sigmoid or equivalent activation layer
-        #inputs = F.sigmoid(inputs)       
+        #inputs = F.sigmoid(inputs)     
+
+        assert inputs.shape == targets.shape  
         
         #flatten label and prediction tensors
         inputs = inputs.view(-1)
@@ -20,6 +22,32 @@ class DiceLoss(nn.Module):
         dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
         
         return 1 - dice
+    
+class SnakeLoss(nn.Module):
+
+    def __init__(self, criterion) -> None:
+        super().__init__()
+        
+        self.criterion = criterion
+
+    def forward(self, input, target):
+        loss_tot = 0
+
+        for i in range(len(target)):
+            ref_snake = target[i].float()
+            tmp_loss = self.criterion(input[i], ref_snake)
+
+            nb_cp, _ = ref_snake.shape
+            
+            for _ in range(nb_cp-1):
+                ref_snake = torch.roll(ref_snake, shifts=1, dims = 0)
+                seg = self.criterion(input[i], ref_snake)
+                if seg.item() < tmp_loss.item():
+                    tmp_loss = seg
+            
+            loss_tot += tmp_loss
+        
+        return loss_tot/len(target)
 
 
 class MutualConsistency(nn.Module):
@@ -74,4 +102,4 @@ class MutualConsistency(nn.Module):
 
         # TODO : /!\ Bien verifier le bon fonctionnement de cette loss
 
-        return (1 - self.gamma)*(self.dice(classic_mask, ground_truth_mask) + seg_tot) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot)
+        return (1 - self.gamma)*(self.dice(classic_mask, ground_truth_mask) + seg_tot/len(snake_GT_size)) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot/len(snake_classic_size))

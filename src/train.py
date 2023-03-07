@@ -4,6 +4,7 @@ import argparse
 import json
 from time import time
 import wandb
+from torch.nn import MSELoss
 
 
 #from datasets.mcsnake_dataset import MCSnakeDataset 
@@ -12,72 +13,109 @@ from datasets.texture_dataset import TextureDataset
 from DL_models.mcsnake_net import MCSnakeNet
 
 
-from loss_functions.consistency_loss import MutualConsistency
+from loss_functions.consistency_loss import MutualConsistency, DiceLoss, SnakeLoss
 from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
 from snake_representation.snake_tools import sample_contour
 
 
-def train(model, optimizer, train_loader, criterion, M, W, H, verbose = False, device = "cpu"):
+def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H, verbose = False, device = "cpu", plot_in_wandb = True):
 
     running_loss = 0.0
+
+    running_reference_mask_loss = 0
+    running_reference_snake_loss = 0
+
+    running_consistency_mask_loss = 0
+    running_consistency_snake_loss = 0
+
+    reference_mask_loss = mask_loss(classic_mask, GT_masks)
+    reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
+
+    consistency_mask_loss = mask_loss(classic_mask, snake_mask)
+    consistency_snake_loss
+    
     rescaling_vect = torch.tensor([1/W, 1/H]).to(device)
 
-    nb_batchs = 0
+    for k, batch in enumerate(train_loader):
 
-    for _, batch in enumerate(train_loader):
-        nb_batchs += 1
+        print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)))
 
         imgs, GT_masks = batch
 
         optimizer.zero_grad()
         
-        tic = time()
+        tic_forward = time()
         classic_mask, snake_cp = model(imgs)
+        tac_forward = time()
 
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
         reshaped_cp = reshaped_cp*rescaling_vect
 
-        if verbose :
-            print("Forward pass processed in {}s".format(time()-tic))
-            tic = time()
-
         classic_mask = torch.squeeze(classic_mask)
 
+        tic_contour = time()
         with torch.no_grad():
             GT_contour = [mask_to_contour(mask).to(device)*rescaling_vect for mask in GT_masks]
             classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_vect for mask in classic_mask]
+        tac_contour = time()
 
-        if verbose :
 
-            print("Contour computed in {}s".format(time()-tic))
-            tic = time()
-
+        tic_sample = time()
         snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
         snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-
-        if verbose :
+        tac_sample = time()
             
-            print("Contour sampled in {}s".format(time()-tic))
-            tic = time()
 
+        tic_mask = time()
         with torch.no_grad():
             snake_mask = torch.stack([contour_to_mask(contour, W, H, device = device) for contour in snake_size_of_GT])
+        tac_mask = time()   
 
-        if verbose :
-            print("Mask computed in {}s".format(time()-tic))
-            tic = time()
+        tic_loss = time()
+        reference_mask_loss = mask_loss(classic_mask, GT_masks)
+        reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
 
-        loss = criterion(GT_masks, GT_contour, snake_size_of_GT, snake_size_of_classic, snake_mask, classic_contour, classic_mask)
+        consistency_mask_loss = mask_loss(classic_mask, snake_mask)
+        consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
+        tac_loss = time()
+
+        loss = (1 - gamma)*(reference_mask_loss + reference_snake_loss) + gamma*(consistency_mask_loss + consistency_snake_loss)
+
+
+        tic_backward = time()
         loss.backward()
         optimizer.step()
+        tac_backward = time()
 
         if verbose :
-            print("Loss computed in {}s".format(time()-tic))
-            tic = time()
+            print("Forward pass processed in {}s".format(tac_forward-tic_forward))
+            print("Contour computed in {}s".format(tac_contour-tic_contour))
+            print("Contour sampled in {}s".format(tac_sample-tic_sample))
+            print("Mask computed in {}s".format(tac_mask-tic_mask))
+            print("Loss computed in {}s".format(tac_loss-tic_loss))
+            print("Backward pass processed in {}s".format(tac_backward-tic_backward))
+
+        running_consistency_mask_loss += consistency_mask_loss.item()
+        running_consistency_snake_loss += consistency_snake_loss.tiem
+        running_reference_mask_loss += reference_mask_loss.item()
+        running_reference_snake_loss += reference_snake_loss.item()
 
         running_loss += loss.item()
+
+        if plot_in_wandb and (k==0):
+            table = wandb.Table(columns=["Type of data", "Image"])
+
+            GT_mask_img = wandb.Image(GT_masks[0], caption="ground truth mask")
+            table.add_data("ground truth mask", GT_mask_img)
+
+            predicted_mask_img = wandb.Image(classic_mask[0], caption="probability map")
+            table.add_data("probability map", predicted_mask_img)
+
+            wandb.log({"Images" : table})
     
-    return running_loss / nb_batchs
+    N = len(train_loader)
+
+    return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N, running_reference_mask_loss / N, running_reference_snake_loss / N
 
 
 
@@ -123,7 +161,11 @@ if __name__ == "__main__" :
 
     optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_config["lr"], weight_decay=optimizer_config["weight_decay"])
 
-    criterion = MutualConsistency(gamma=criterion_config["gamma"], device=device, verbose = verbose)
+    mask_loss = DiceLoss()
+    criterion = MSELoss()
+    snake_loss = SnakeLoss(criterion=criterion)
+    gamma=criterion_config["gamma"]
+    #criterion = MutualConsistency(gamma=criterion_config["gamma"], device=device, verbose = verbose)
 
 
 
@@ -137,24 +179,22 @@ if __name__ == "__main__" :
         "learning_rate": optimizer_config["lr"],
         "architecture": "UNET",
         "dataset": "Texture",
-        "epochs": train_config["nb_epochs"],
+        "epochs": train_config["nb_epochs"]
         }
     )
-
-    loss_list = list()
 
     epoch_modulo = train_config["print_every_nb_epochs"]
 
     for epoch in range(train_config["nb_epochs"]):
 
         print(f"Starting epoch {epoch}")
-        loss = train(model, optimizer, train_loader, criterion, M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
-        loss_list.append(loss)
+        loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss = \
+                train(model, optimizer, train_loader, mask_loss=mask_loss, snake_loss=snake_loss, gamma=gamma, M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
 
-        wandb.log({"loss": loss})
+        wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
+                   "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
+                      "reference_snake_loss" : reference_snake_loss})
         
-        if epoch%epoch_modulo == epoch_modulo-1 :
-            print("Epoch nb {} ; loss : {}".format(epoch, loss))
 
     wandb.finish()
 

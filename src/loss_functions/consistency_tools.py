@@ -69,7 +69,7 @@ if __name__ == "__main__":
     contour = torch.tensor([[10,10],[30,10],[30,20],[20,20],[20,30],[30,40],[10,40]])
 
     #contour = mask_to_contour(img, verbose=False, add_last=True)
-    mask = contour_to_mask_test(contour, W, H)
+    mask = contour_to_mask(contour, W, H)
 
 
     #plt.imshow(mask)
