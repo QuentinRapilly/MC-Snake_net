@@ -90,7 +90,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, M, W, H,
             print("Backward pass processed in {}s".format(tac_backward-tic_backward))
 
         running_consistency_mask_loss += consistency_mask_loss.item()
-        running_consistency_snake_loss += consistency_snake_loss.tiem
+        running_consistency_snake_loss += consistency_snake_loss.item()
         running_reference_mask_loss += reference_mask_loss.item()
         running_reference_snake_loss += reference_snake_loss.item()
 
