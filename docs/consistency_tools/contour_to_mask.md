@@ -45,7 +45,7 @@ $$\underbrace{(v¹_x-v²_x)}_c.u_y - \underbrace{(v¹_y-v²_y)}_d.u_x +\underbra
 
 The equivalence is correct because before calculation we make sure that for any edge the first point considered ($v_1$), is the one with the higher $y$ coordinate. Then $(v¹_y-v²_y)$ is positive.
 
-### Summary 
+### Summary
 
 For each edge we compute :
 $$a=v¹_yv²_y$$

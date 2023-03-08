@@ -185,16 +185,16 @@ if __name__ == "__main__" :
         loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, snake_loss=snake_loss, gamma=gamma, M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
 
-        wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
-                   "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
-                      "reference_snake_loss" : reference_snake_loss})
         
         gt, proba, snake = plot_res
         gt = wandb.Image(gt, caption="GT")
         proba = wandb.Image(proba, caption="Probability map")
         snake = wandb.Image(snake, caption="Snake mask")
 
-        wandb.log({"GT" : gt, "Probability map" : proba, "Snake mask" : snake})
+        wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
+                   "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
+                      "reference_snake_loss" : reference_snake_loss, "GT" : gt,\
+                        "Probability map" : proba, "Snake mask" : snake})
         
 
     wandb.finish()
