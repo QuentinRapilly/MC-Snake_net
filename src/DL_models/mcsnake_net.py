@@ -48,7 +48,8 @@ class Decoder(nn.Module):
 
 
 class MCSnakeNet(nn.Module):
-    def __init__(self, enc_chs=(3,64,128,256,512,1024), dec_chs=(1024, 512, 256, 128, 64), num_class=1, typeA="classic", typeB="snake", nb_control_points = 8, img_shape = (256,256), apply_sigmoid = True):
+    def __init__(self, enc_chs=(3,64,128,256,512,1024), dec_chs=(1024, 512, 256, 128, 64), num_class=1,\
+                 typeA="classic", typeB="snake", nb_control_points = 8, img_shape = (256,256)):
         super().__init__()
         self.encoder = Encoder(enc_chs)
 
@@ -62,8 +63,6 @@ class MCSnakeNet(nn.Module):
         self.flatten_img_shape = img_shape[0]*img_shape[1]
 
         self.nb_control_points = nb_control_points
-
-        self.apply_sigmoid = apply_sigmoid
         
         possible_types = ["classic", "snake"]
 
@@ -86,11 +85,8 @@ class MCSnakeNet(nn.Module):
                 nn.Linear(in_features=self.flatten_img_shape,out_features=2*nb_control_points))
 
 
-        self.sigmoid = nn.Sigmoid()
-
     def forward(self, x, verbose = False):
         enc_ftrs = self.encoder(x , verbose=verbose)
-
 
         outA = self.decoderA(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
         outA = self.headA(outA)
@@ -98,9 +94,6 @@ class MCSnakeNet(nn.Module):
         outB = self.decoderB(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
         outB = self.headB(outB)
 
-        if self.apply_sigmoid:
-            outA = self.sigmoid(outA)
-            outB = self.sigmoid(outB)
         return outA, outB
 
     
