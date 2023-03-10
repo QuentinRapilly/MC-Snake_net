@@ -40,6 +40,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
         print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
 
+        B = train_loader.batchsize
         imgs, GT_masks = batch
 
         optimizer.zero_grad()
@@ -53,6 +54,9 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         classic_mask = torch.squeeze(classic_mask)
 
         snake_cp = sigmoid(snake_cp)
+
+        if B==1:
+            GT_masks = torch.squeeze(GT_masks)
         
 
         """
@@ -94,6 +98,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
         #print("Shape de classic_mask : {}, shape de GT mask : {}, extrema de classic_mask : {},{}".format(classic_mask.shape, GT_masks.shape,\
         #                                                                                                  torch.min(classic_mask),torch.max(classic_mask)))
+        
         loss = mask_loss(classic_mask, GT_masks)
 
 
@@ -120,7 +125,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
         running_loss += loss.item()
 
-        B = train_loader.batchsize
         plt.figure(figsize = (20,10))
         for i in range(4):
             plt.subplot(3,B,1+i)
