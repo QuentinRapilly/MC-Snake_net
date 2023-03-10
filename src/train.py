@@ -40,7 +40,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
         print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
 
-        B = train_loader.batchsize
+        B = train_loader.batch_size
         imgs, GT_masks = batch
 
         optimizer.zero_grad()
@@ -199,6 +199,7 @@ if __name__ == "__main__" :
 
     train_loader = DataLoader(train_set, batch_size=train_config["batchsize"])
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])
+
 
 
     # Initializing the model
