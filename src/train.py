@@ -21,7 +21,7 @@ from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
 from snake_representation.snake_tools import sample_contour
 
 
-def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M, W, H, verbose = False, device = "cpu", print_in_table = True):
+def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M, W, H, epoch, verbose = False, device = "cpu", print_in_table = True):
 
     tic_epoch = time()
 
@@ -139,7 +139,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
             plt.imshow(sigmoid(classic_mask[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
             #plt.imshow(classic_mask[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
-        plt.savefig("/net/serpico-fs2/qrapilly/model_storage/MC-snake/batch_{}.png".format(k))
+        plt.savefig("/net/serpico-fs2/qrapilly/model_storage/MC-snake/epoch_{}_batch_{}.png".format(epoch,k))
 
         plt.close()
 
@@ -243,7 +243,7 @@ if __name__ == "__main__" :
         print(f"Starting epoch {epoch}")
         loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, snake_loss=snake_loss, gamma=gamma, theta=theta,\
-                      M=snake_config["M"], W=W, H=H, verbose=verbose, device = device)
+                      M=snake_config["M"], W=W, H=H, epoch=epoch, verbose=verbose, device = device)
 
         
         gt, proba = plot_res #, snake
