@@ -6,6 +6,8 @@ from time import time
 import wandb
 from torch.nn import MSELoss, BCEWithLogitsLoss
 from torch import sigmoid
+from datetime import datetime
+from os.path import join
 
 import matplotlib.pyplot as plt # enlever quand le probleme est regle
 
@@ -259,4 +261,5 @@ if __name__ == "__main__" :
 
     wandb.finish()
 
-    torch.save(model.state_dict(), model_config["save_path"])
+    now = datetime.now()
+    torch.save(model.state_dict(), join(model_config["save_path"],str(now).replace(" ","_").split(".")[0]+".pkl"))
