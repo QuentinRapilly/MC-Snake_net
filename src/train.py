@@ -120,17 +120,18 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
         running_loss += loss.item()
 
+        B = train_loader.batchsize
         plt.figure(figsize = (20,10))
         for i in range(4):
-            plt.subplot(3,4,1+i)
+            plt.subplot(3,B,1+i)
             plt.imshow(torch.squeeze(imgs[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
         for i in range(4):
-            plt.subplot(3,4,5+i)
+            plt.subplot(3,B,1+B+i)
             plt.imshow(GT_masks[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
         
         for i in range(4):
-            plt.subplot(3,4,9+i)
+            plt.subplot(3,B,1+2*B+i)
             plt.imshow(sigmoid(classic_mask[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
             #plt.imshow(classic_mask[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
@@ -186,8 +187,11 @@ if __name__ == "__main__" :
 
     W, H = config_dic["data"]["image_size"]
 
-    train_set = TextureDataset(path=train_config["path_to_data"], device = device)
-    test_set = TextureDataset(path=train_config["path_to_data"], subset=2, device = device)
+    train_set_index = train_config["set_index"]
+    test_set_index = test_config["set_index"]
+
+    train_set = TextureDataset(path=train_config["path_to_data"], subset=train_set_index, device = device)
+    test_set = TextureDataset(path=train_config["path_to_data"], subset=test_set_index, device = device)
 
     train_loader = DataLoader(train_set, batch_size=train_config["batchsize"])
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])

@@ -37,8 +37,8 @@
 
         "train_set" : {
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
-            "set_index" : 1,
-            "batchsize" : 4,
+            "set_index" : 0,
+            "batchsize" : 1,
             "nb_epochs" : 10,
             "print_every_nb_epochs" : 1
         },
@@ -46,7 +46,7 @@
         "test_set" : {
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 2,
-            "batchsize" : 4
+            "batchsize" : 1
         }  
     }
 }
