@@ -126,15 +126,15 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         running_loss += loss.item()
 
         plt.figure(figsize = (20,10))
-        for i in range(4):
+        for i in range(B):
             plt.subplot(3,B,1+i)
             plt.imshow(torch.squeeze(imgs[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
-        for i in range(4):
+        for i in range(B):
             plt.subplot(3,B,1+B+i)
             plt.imshow(GT_masks[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
         
-        for i in range(4):
+        for i in range(B):
             plt.subplot(3,B,1+2*B+i)
             plt.imshow(sigmoid(classic_mask[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
             #plt.imshow(classic_mask[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
