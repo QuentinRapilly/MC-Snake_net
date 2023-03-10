@@ -1,6 +1,6 @@
 {
     "settings" : {
-        "verbose" : true
+        "verbose" : false
         
     },
 
@@ -11,7 +11,7 @@
 
         "nb_control_points" : 10,
 
-        "save_path" : "/nfs/nas4/serpico_1/serpico/qrapilly/MC-Snake_net/src/models_storage"
+        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
     },
 
@@ -21,7 +21,8 @@
     },
 
     "criterion" : {
-        "gamma" : 0.1
+        "gamma" : 0.0,
+        "theta" : 1.0
     },
 
     "active_contour" : {
@@ -35,14 +36,14 @@
         "image_size" : [512,512],
 
         "train_set" : {
-            "path_to_data" : "/srv/tempdd/qrapilly/Texture/",
+            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "batchsize" : 4,
             "nb_epochs" : 10,
             "print_every_nb_epochs" : 1
         },
 
         "test_set" : {
-            "path_to_data" : "/srv/tempdd/qrapilly/Texture/",
+            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "batchsize" : 4
         }  
     }
