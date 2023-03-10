@@ -54,9 +54,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         classic_mask = torch.squeeze(classic_mask)
 
         snake_cp = sigmoid(snake_cp)
-
-        if B==1:
-            GT_masks = torch.squeeze(GT_masks)
         
 
         """
@@ -99,6 +96,9 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         #print("Shape de classic_mask : {}, shape de GT mask : {}, extrema de classic_mask : {},{}".format(classic_mask.shape, GT_masks.shape,\
         #                                                                                                  torch.min(classic_mask),torch.max(classic_mask)))
         
+
+        if B==1:
+            classic_mask = torch.unsqueeze(classic_mask,0)
         loss = mask_loss(classic_mask, GT_masks)
 
 
