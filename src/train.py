@@ -4,8 +4,8 @@ import argparse
 import json
 from time import time
 import wandb
-from torch.nn import MSELoss, BCEWithLogitsLoss
-from torch import sigmoid
+from torch.nn import MSELoss, BCEWithLogitsLoss, CrossEntropyLoss
+from torch.nn.functional import sigmoid
 from datetime import datetime
 from os.path import join
 
@@ -45,17 +45,21 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         B = train_loader.batch_size
         imgs, GT_masks = batch
 
+        #GT_masks = torch.nn.functional.one_hot(GT_masks, num_classes = 2)
+
         optimizer.zero_grad()
         
         # Model applied to input
         tic_forward = time()
-        classic_mask, snake_cp = model(imgs)
+        classic_mask = model(imgs)#, snake_cp = model(imgs)
         tac_forward = time()
 
         #classic_mask = sigmoid(classic_mask)
         classic_mask = torch.squeeze(classic_mask)
+        #classic_mask = softmax(classic_mask, dim=-3)
 
-        snake_cp = sigmoid(snake_cp)
+
+        #snake_cp = sigmoid(snake_cp)
         
 
         """
@@ -95,8 +99,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
         #loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss) +\
         #    gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)"""
 
-        #print("Shape de classic_mask : {}, shape de GT mask : {}, extrema de classic_mask : {},{}".format(classic_mask.shape, GT_masks.shape,\
-        #                                                                                                  torch.min(classic_mask),torch.max(classic_mask)))
+        print("Type of GT_mask : {}, shape de GT mask : {}, extrema de GT : {},{}".\
+              format(GT_masks.dtype, GT_masks.shape,torch.min(GT_masks),torch.max(GT_masks)))
         
 
         if B==1:
@@ -162,7 +166,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, gamma, theta, M
 
 if __name__ == "__main__" :
 
-    # TODO : sauvergarder le modele a la fin du training, creer une fonction de test
+    # TODO : creer une fonction de test
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -206,7 +210,8 @@ if __name__ == "__main__" :
 
     # Initializing the model
     enc_chs=(config_dic["data"]["nb_channels"],64,128,256,512,1024)
-    model = MCSnakeNet(enc_chs=enc_chs,typeA=model_config["typeA"], typeB=model_config["typeB"], nb_control_points=model_config["nb_control_points"], img_shape=(W,H)).to(device)
+    model = MCSnakeNet(enc_chs=enc_chs,typeA=model_config["typeA"], typeB=model_config["typeB"], num_class=model_config["num_class"],\
+                       nb_control_points=model_config["nb_control_points"], img_shape=(W,H)).to(device)
 
     # Initializing the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_config["lr"], weight_decay=optimizer_config["weight_decay"])
@@ -215,6 +220,7 @@ if __name__ == "__main__" :
     #mask_loss = DiceLoss() 
     #mask_loss = MSELoss() 
     mask_loss = BCEWithLogitsLoss() 
+    #mask_loss = CrossEntropyLoss()
 
     criterion = MSELoss()
     snake_loss = SnakeLoss(criterion=criterion)

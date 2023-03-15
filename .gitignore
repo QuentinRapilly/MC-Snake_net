@@ -1,3 +1,5 @@
 */models_storage
 /wandb
 /container/*.sif
+*__pycache__
+src/train_etienne_unet.py

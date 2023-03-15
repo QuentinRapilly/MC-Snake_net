@@ -11,6 +11,8 @@
 
         "nb_control_points" : 10,
 
+        "num_class" : 1,
+
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
     },
@@ -19,6 +21,17 @@
         "lr" : 0.001,
         "weight_decay" : 0.01
     },
+
+    "scheduler" : {
+        "gamma" : 0.9,
+        "step_every_nb_epoch" : 5
+    },
+
+    "loss" : {
+        "loss_name" : "dice",
+        "apply_sigmoid" : false
+    },
+
 
     "criterion" : {
         "gamma" : 0.0,

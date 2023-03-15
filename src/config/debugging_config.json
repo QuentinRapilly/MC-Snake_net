@@ -11,6 +11,8 @@
 
         "nb_control_points" : 10,
 
+        "num_class" : 1,
+
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
     },
@@ -18,6 +20,10 @@
     "optimizer" : {
         "lr" : 0.001,
         "weight_decay" : 0.01
+    },
+
+    "scheduler" : {
+        "gamma" : 0.9
     },
 
     "criterion" : {
@@ -39,7 +45,7 @@
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 0,
             "batchsize" : 1,
-            "nb_epochs" : 10,
+            "nb_epochs" : 100,
             "print_every_nb_epochs" : 1
         },
 

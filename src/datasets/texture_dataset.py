@@ -36,7 +36,7 @@ class TextureDataset(Dataset):
         mask_path = join(self.masks_path, mask_idx+".bmp")
         mask = imread(mask_path)
 
-        return torch.unsqueeze(torch.tensor(img)/255,0).to(self.device), torch.tensor(mask).to(self.device)/255
+        return torch.unsqueeze(torch.tensor(img)/255,0).to(self.device), (torch.tensor(mask)/255).to(device=self.device)
 
     def __len__(self):
         return len(self.imgs_names)

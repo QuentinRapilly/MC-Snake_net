@@ -24,10 +24,11 @@ class Encoder(nn.Module):
         for i,block in enumerate(self.enc_blocks):
             x = block(x)
             if verbose : 
-                print("Decoder, step {}, shape = {}".format(i,x.shape))
+                print("Encoder, step {}, shape = {}".format(i,x.shape))
             ftrs.append(x)
             x = self.pool(x)
         return ftrs
+
 
 
 class Decoder(nn.Module):
@@ -43,7 +44,7 @@ class Decoder(nn.Module):
             x = torch.cat([x, encoder_features[i]], dim=1)
             x = self.dec_blocks[i](x)
             if verbose : 
-                print("Encoder, step {}, shape = {}".format(i,x.shape))
+                print("Decoder, step {}, shape = {}".format(i,x.shape))
         return x
 
 
@@ -91,10 +92,10 @@ class MCSnakeNet(nn.Module):
         outA = self.decoderA(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
         outA = self.headA(outA)
 
-        outB = self.decoderB(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
-        outB = self.headB(outB)
+        #outB = self.decoderB(enc_ftrs[::-1][0], enc_ftrs[::-1][1:], verbose = verbose)
+        #outB = self.headB(outB)
 
-        return outA, outB
+        return outA#, outB
 
     
 
