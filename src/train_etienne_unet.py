@@ -73,7 +73,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
-        print("control points".format(reshaped_cp))
+        print("control points : {}".format(reshaped_cp))
 
         classic_mask = torch.squeeze(classic_mask)
 
