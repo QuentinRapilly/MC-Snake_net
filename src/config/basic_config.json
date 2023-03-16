@@ -28,15 +28,12 @@
     },
 
     "loss" : {
-        "loss_name" : "dice",
-        "apply_sigmoid" : false
-    },
-
-
-    "criterion" : {
+        "mask_loss" : "dice",
+        "apply_sigmoid" : false,
         "gamma" : 0.0,
         "theta" : 1.0
     },
+
 
     "active_contour" : {
         "M" : 10
