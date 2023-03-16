@@ -228,7 +228,7 @@ if __name__ == "__main__" :
         print(f"Starting epoch {epoch}")
         loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                    epoch=epoch, verbose=verbose)
+                    M=snake_config["M"], W=W, H=H, epoch=epoch, verbose=verbose)
 
         
         gt, proba = plot_res #, snake
