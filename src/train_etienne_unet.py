@@ -73,6 +73,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
+        print("control points".format(reshaped_cp))
+
         classic_mask = torch.squeeze(classic_mask)
 
         # Transforming GT mask and predicted mask into contour for loss computation
@@ -189,6 +191,8 @@ if __name__ == "__main__" :
     snake_config = config_dic["active_contour"]
     loss_config = config_dic["loss"]
 
+    M = snake_config["M"]
+
     W, H = config_dic["data"]["image_size"]
 
     train_set_index = train_config["set_index"]
@@ -207,7 +211,7 @@ if __name__ == "__main__" :
     #                  padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm').to(device)
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=model_config["nb_control_points"]).to(device)
+                        nb_control_points=M).to(device)
 
 
     # Initializing the optimizer
@@ -251,7 +255,7 @@ if __name__ == "__main__" :
         loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
                       snake_loss=snake_loss, gamma=gamma, theta=theta,\
-                        M=snake_config["M"], W=W, H=H, epoch=epoch, verbose=verbose)
+                        M=M, W=W, H=H, epoch=epoch, verbose=verbose)
 
         
         gt, proba = plot_res #, snake

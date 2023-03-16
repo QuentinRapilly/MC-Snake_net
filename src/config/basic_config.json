@@ -6,11 +6,6 @@
 
     "model" : {
 
-        "typeA" : "classic",
-        "typeB" : "snake",
-
-        "nb_control_points" : 10,
-
         "num_class" : 1,
 
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
@@ -36,7 +31,7 @@
 
 
     "active_contour" : {
-        "M" : 10
+        "M" : 6
     },
 
     "data" : {
