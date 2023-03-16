@@ -1,32 +1,42 @@
-import torch
-from torch.utils.data import DataLoader
 import argparse
 import json
 from time import time
-import wandb
-from torch.nn import MSELoss, BCEWithLogitsLoss, CrossEntropyLoss
-from torch import sigmoid
 from datetime import datetime
-from os.path import join, isdir
-from os import mkdir
+from os.path import join
+
+import torch
+from torch.utils.data import DataLoader
+from torch.nn import MSELoss, BCEWithLogitsLoss
+from torch import sigmoid
 from torch.optim.lr_scheduler import ExponentialLR
 
+import wandb
+
 import matplotlib.pyplot as plt # enlever quand le probleme est regle
+from os.path import isdir       # enlever quand le probleme est regle
+from os import mkdir            # enlever quand le probleme est regle
 
 from datasets.texture_dataset import TextureDataset
-
-from DL_models.u2D_2D import Unet2D_2D
 from DL_models.mcsnakenet_clean import MCSnakeNet
+from loss_functions.consistency_loss import DiceLoss, SnakeLoss
+from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
+from snake_representation.snake_tools import sample_contour
 
 
-from loss_functions.consistency_loss import MutualConsistency, DiceLoss, SnakeLoss
-
-
-def train(model, optimizer, train_loader, mask_loss, epoch : int, apply_sigmoid : bool, verbose = False):
+def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, epoch : int, apply_sigmoid : bool, verbose = False):
 
     tic_epoch = time()
 
     running_loss = 0.0
+
+    running_reference_mask_loss = 0.0
+    running_reference_snake_loss = 0.0
+
+    running_consistency_mask_loss = 0.0
+    running_consistency_snake_loss = 0.0
+    
+    rescaling_vect = torch.tensor([W, H]).to(device)
+    rescaling_inv = torch.tensor([1/W, 1/H]).to(device)
 
     N = len(train_loader)
 
@@ -52,11 +62,38 @@ def train(model, optimizer, train_loader, mask_loss, epoch : int, apply_sigmoid 
         classic_mask, control_points = model(imgs)
         tac_forward = time()
 
+        # Some loss function (as BCEWithLogitsLoss) apply sigmoid so we don't need to in loss computation
         if apply_sigmoid :
             classic_mask = sigmoid(classic_mask)
-            
+
+        # we want our control points to be in [0;1] in a first time so we apply sigmoid, 
+        # then we will be able to rescale them in WxH (our images shape)
+        snake_cp = sigmoid(snake_cp)
+
+        # Control points format (2M) -> (M,2)
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+
         classic_mask = torch.squeeze(classic_mask)
-        
+
+        # Transforming GT mask and predicted mask into contour for loss computation
+        tic_contour = time()
+        with torch.no_grad():
+            GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
+            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
+        tac_contour = time()
+
+        # Sampling the predicted snake to compute the snake loss
+        tic_sample = time()
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        tac_sample = time()
+            
+        # Creating mask form contour predicted by the snake part
+        tic_mask = time()
+        with torch.no_grad():
+            snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_size_of_GT])
+        tac_mask = time() 
+
 
         if B==1:
             classic_mask = torch.unsqueeze(classic_mask,0)

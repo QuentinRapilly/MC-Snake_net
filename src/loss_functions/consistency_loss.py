@@ -50,6 +50,7 @@ class SnakeLoss(nn.Module):
         return loss_tot/len(target)
 
 
+"""
 class MutualConsistency(nn.Module):
 
     def __init__(self, gamma, device = "cpu", verbose = False) -> None:
@@ -103,3 +104,4 @@ class MutualConsistency(nn.Module):
         # TODO : /!\ Bien verifier le bon fonctionnement de cette loss
 
         return (1 - self.gamma)*(self.dice(classic_mask, ground_truth_mask) + seg_tot/len(snake_GT_size)) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot/len(snake_classic_size))
+"""
