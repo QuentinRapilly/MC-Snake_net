@@ -59,7 +59,7 @@ def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, 
         
         # Model applied to input
         tic_forward = time()
-        classic_mask, control_points = model(imgs)
+        classic_mask, snake_cp = model(imgs)
         tac_forward = time()
 
         # Some loss function (as BCEWithLogitsLoss) apply sigmoid so we don't need to in loss computation
