@@ -215,7 +215,7 @@ if __name__ == "__main__" :
 
 
     # Initializing the loss 
-    mask_loss = {"bce": BCEWithLogitsLoss(), "dice": DiceLoss(), "mse" : MSELoss() }[loss_config["loss_name"]]
+    mask_loss = {"bce": BCEWithLogitsLoss(), "dice": DiceLoss(), "mse" : MSELoss() }[loss_config["mask_loss"]]
     apply_sigmoid = loss_config["apply_sigmoid"]
 
     criterion = MSELoss()
