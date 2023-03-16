@@ -23,7 +23,7 @@ from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
 from snake_representation.snake_tools import sample_contour
 
 
-def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, epoch : int, apply_sigmoid : bool, verbose = False):
+def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W : int, H : int, M : int, epoch : int, apply_sigmoid : bool, verbose = False):
 
     tic_epoch = time()
 
@@ -94,10 +94,18 @@ def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, 
             snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_size_of_GT])
         tac_mask = time() 
 
+        # Computing the different part of the loss then the global loss
+        tic_loss = time()
+        reference_mask_loss = mask_loss(classic_mask, GT_masks)
+        reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
 
-        if B==1:
-            classic_mask = torch.unsqueeze(classic_mask,0)
-        loss = mask_loss(classic_mask, GT_masks)
+        consistency_mask_loss = mask_loss(classic_mask, snake_mask)
+        consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
+        tac_loss = time()
+
+
+        loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss) +\
+            gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
 
 
         # Backward gradient step
@@ -105,6 +113,11 @@ def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, 
         loss.backward()
         optimizer.step()
         tac_backward = time()
+
+        running_consistency_mask_loss += consistency_mask_loss.item()
+        running_consistency_snake_loss += consistency_snake_loss.item()
+        running_reference_mask_loss += reference_mask_loss.item()
+        running_reference_snake_loss += reference_snake_loss.item()
 
         running_loss += loss.item()
 
@@ -136,7 +149,8 @@ def train(model, optimizer, train_loader, mask_loss, W : int, H : int, M : int, 
 
     print("Epoch terminated in {}s".format(tac_epoch-tic_epoch))
 
-    return running_loss / N, plot_res
+    return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N,\
+        running_reference_mask_loss / N, running_reference_snake_loss / N, plot_res
 
 
 
@@ -168,8 +182,8 @@ if __name__ == "__main__" :
 
     model_config = config_dic["model"]
     optimizer_config = config_dic["optimizer"]
-    criterion_config = config_dic["criterion"]
     snake_config = config_dic["active_contour"]
+    loss_config = config_dic["loss"]
 
     W, H = config_dic["data"]["image_size"]
 
@@ -199,11 +213,15 @@ if __name__ == "__main__" :
     scheduler_step = scheduler_config["step_every_nb_epoch"]
     scheduler = ExponentialLR(optimizer=optimizer, gamma=scheduler_config["gamma"])
 
-    loss_config = config_dic["loss"]
 
     # Initializing the loss 
     mask_loss = {"bce": BCEWithLogitsLoss(), "dice": DiceLoss(), "mse" : MSELoss() }[loss_config["loss_name"]]
     apply_sigmoid = loss_config["apply_sigmoid"]
+
+    criterion = MSELoss()
+    snake_loss = SnakeLoss(criterion=criterion)
+    gamma = loss_config["gamma"]
+    theta = loss_config["theta"]
 
 
 
@@ -226,9 +244,10 @@ if __name__ == "__main__" :
     for epoch in range(train_config["nb_epochs"]):
 
         print(f"Starting epoch {epoch}")
-        loss, plot_res = \
+        loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, plot_res = \
                 train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                    M=snake_config["M"], W=W, H=H, epoch=epoch, verbose=verbose)
+                      snake_loss=snake_loss, gamma=gamma, theta=theta,\
+                        M=snake_config["M"], W=W, H=H, epoch=epoch, verbose=verbose)
 
         
         gt, proba = plot_res #, snake
@@ -236,8 +255,10 @@ if __name__ == "__main__" :
         proba = wandb.Image(proba, caption="Probability map")
         #snake = wandb.Image(snake, caption="Snake mask")
 
-        wandb.log({"loss": loss, "GT" : gt,\
-                        "Probability map" : proba})
+        wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
+                   "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
+                      "reference_snake_loss" : reference_snake_loss, "GT" : gt,\
+                        "Probability map" : proba})#, "Snake mask" : snake})
         
         if (epoch + 1)%scheduler_step == 0:
             scheduler.step()
