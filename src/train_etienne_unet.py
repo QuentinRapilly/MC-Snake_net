@@ -124,17 +124,21 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         if k<N-1:
             plt.figure(figsize = (20,10))
             for i in range(B):
-                plt.subplot(3,B,1+i)
+                plt.subplot(4,B,1+i)
                 plt.imshow(torch.squeeze(imgs[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
             for i in range(B):
-                plt.subplot(3,B,1+B+i)
+                plt.subplot(4,B,1+B+i)
                 plt.imshow(GT_masks[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
             
             for i in range(B):
-                plt.subplot(3,B,1+2*B+i)
+                plt.subplot(4,B,1+2*B+i)
                 plt.imshow(sigmoid(classic_mask[i]).detach().cpu(), cmap="gray", vmin=0, vmax=1)
                 #plt.imshow(classic_mask[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
+
+            for i in range(B):
+                plt.subplot(4,B,1+3*B+i)
+                plt.imshow(snake_mask[i].detach().cpu(), cmap="gray", vmin=0, vmax=1)
 
             plt.savefig(join(plot_dir,"batch_{}.png".format(k)))
 

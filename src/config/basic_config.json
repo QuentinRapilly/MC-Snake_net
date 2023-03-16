@@ -31,7 +31,7 @@
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
         "gamma" : 0.0,
-        "theta" : 1.0
+        "theta" : 0.6
     },
 
 
