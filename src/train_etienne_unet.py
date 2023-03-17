@@ -6,6 +6,7 @@ from os.path import join
 
 import torch
 from torch.utils.data import DataLoader
+from torch.nn.utils import clip_grad_norm
 from torch.nn import MSELoss, BCEWithLogitsLoss
 from torch import sigmoid
 from torch.optim.lr_scheduler import ExponentialLR
@@ -73,8 +74,6 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
-        print("control points : {}".format(reshaped_cp))
-
         classic_mask = torch.squeeze(classic_mask)
 
         # Transforming GT mask and predicted mask into contour for loss computation
@@ -113,6 +112,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Backward gradient step
         tic_backward = time()
         loss.backward()
+        clip_grad_norm(model.parameters, max_norm=1.)
         optimizer.step()
         tac_backward = time()
 
