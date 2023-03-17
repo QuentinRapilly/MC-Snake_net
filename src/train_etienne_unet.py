@@ -112,7 +112,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Backward gradient step
         tic_backward = time()
         loss.backward()
-        clip_grad_norm(model.parameters, max_norm=1.)
+        clip_grad_norm(model.parameters(), max_norm=1.)
         optimizer.step()
         tac_backward = time()
 
