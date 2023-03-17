@@ -211,7 +211,8 @@ if __name__ == "__main__" :
     #                  padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm').to(device)
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=M).to(device)
+                        nb_control_points=M, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
+    # TODO : ajouter le nombre de couche snake
 
 
     # Initializing the optimizer

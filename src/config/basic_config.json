@@ -8,6 +8,8 @@
 
         "num_class" : 1,
 
+        "nb_snake_layers" : 4,
+
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
     },
@@ -26,7 +28,7 @@
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
         "gamma" : 0.0,
-        "theta" : 0.6
+        "theta" : 0.9
     },
 
 
