@@ -36,7 +36,7 @@ class SnakeLoss(nn.Module):
             ref_snake = target[i].float()
             tmp_loss = self.criterion(input[i], ref_snake)
 
-            nb_cp, _ = ref_snake.shape
+            nb_cp = ref_snake.shape[0]
             
             for _ in range(nb_cp-1):
                 ref_snake = torch.roll(ref_snake, shifts=1, dims = 0)

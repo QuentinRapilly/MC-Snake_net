@@ -57,6 +57,8 @@ def mask_to_contour(mask : torch.tensor, only_one = True , add_last = False, ver
     if only_one :
         contour = contours[np.argmax([len(contour) for contour in contours])]
         return torch.squeeze(torch.tensor(contour))
+            # Pas optimal si le contour le plus long n'est composé que d'un point
+            # car ça va squeezer une dimension de trop TODO : trouver un meilleur moyen
     
     return contours
 

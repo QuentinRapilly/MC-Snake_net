@@ -7,7 +7,7 @@ from os.path import join
 import torch
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm
-from torch.nn import MSELoss, BCEWithLogitsLoss
+from torch.nn import MSELoss,L1Loss, BCEWithLogitsLoss
 from torch import sigmoid
 from torch.optim.lr_scheduler import ExponentialLR
 
@@ -84,6 +84,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
             GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
             classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
         tac_contour = time()
+
+        print("Max/min GT snake : {}/{}".format(torch.max(GT_contour[0],torch.min(GT_contour[0]))))
 
         # Sampling the predicted snake to compute the snake loss
         tic_sample = time()
@@ -229,7 +231,7 @@ if __name__ == "__main__" :
     mask_loss = {"bce": BCEWithLogitsLoss(), "dice": DiceLoss(), "mse" : MSELoss() }[loss_config["mask_loss"]]
     apply_sigmoid = loss_config["apply_sigmoid"]
 
-    criterion = MSELoss()
+    criterion = {"mse" : MSELoss(), "l1" : L1Loss()}[loss_config["snake_loss"]]
     snake_loss = SnakeLoss(criterion=criterion)
     gamma = loss_config["gamma"]
     theta = loss_config["theta"]
