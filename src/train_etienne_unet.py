@@ -85,7 +85,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
             classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
         tac_contour = time()
 
-        print("Max/min GT snake : {}/{}".format(torch.max(GT_contour[0],torch.min(GT_contour[0]))))
+        print("Max/min GT snake : {}/{}".format(torch.max(GT_contour[0]),torch.min(GT_contour[0])))
 
         # Sampling the predicted snake to compute the snake loss
         tic_sample = time()
