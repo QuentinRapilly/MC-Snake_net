@@ -67,6 +67,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         if apply_sigmoid :
             classic_mask = sigmoid(classic_mask)
 
+        print("CP : {}".format(snake_cp))
+
         # we want our control points to be in [0;1] in a first time so we apply sigmoid, 
         # then we will be able to rescale them in WxH (our images shape)
         snake_cp = sigmoid(snake_cp)
@@ -112,7 +114,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma, W
         # Backward gradient step
         tic_backward = time()
         loss.backward()
-        clip_grad_norm(model.parameters(), max_norm=1.)
+        #clip_grad_norm(model.parameters(), max_norm=1.)
         optimizer.step()
         tac_backward = time()
 
