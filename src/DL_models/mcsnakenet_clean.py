@@ -9,7 +9,7 @@ class MCSnakeNet(Unet2D_2D):
         self.img_height, self.img_width = img_shape
         self.nb_snake_layers = nb_snake_layers
         self.bottleneck_dim = (self.features_start*self.img_height*self.img_width)//2**(self.num_layers-1)
-        self.snake_layers_dim = [self.bottleneck_dim] +[(2*nb_control_points)*2**(nb_snake_layers-i) for i in range(self.nb_snake_layers)]
+        self.snake_layers_dim = [self.bottleneck_dim] +[(2*nb_control_points)*2**(nb_snake_layers-i-1) for i in range(self.nb_snake_layers)]
         self.nb_control_points = nb_control_points
 
         self.snake_layers = nn.ModuleList([nn.Linear(self.snake_layers_dim[i], self.snake_layers_dim[i+1]) for i in range(self.nb_snake_layers)])
