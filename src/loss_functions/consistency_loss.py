@@ -24,27 +24,26 @@ class DiceLoss(nn.Module):
     
 class SnakeLoss(nn.Module):
 
-    def __init__(self, criterion) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        
-        self.criterion = criterion
 
-    def forward(self, input, target):
+    def forward(self, x, target):
         loss_tot = 0
 
         for i in range(len(target)):
+            loss_list = list()
             ref_snake = target[i].float()
-            tmp_loss = self.criterion(input[i], ref_snake)
+            pred_snake = x[i]
 
             nb_cp = ref_snake.shape[0]
+
+            for _ in range(nb_cp):
+                diff = torch.linalg.vector_norm(pred_snake-ref_snake, dim=-1)
+                diff = torch.sum(diff, dim=-1)
+                loss_list.append(diff/nb_cp)
+                ref_snake = torch.roll(ref_snake, shifts=1, dims=0)
             
-            for _ in range(nb_cp-1):
-                ref_snake = torch.roll(ref_snake, shifts=1, dims = 0)
-                seg = self.criterion(input[i], ref_snake)
-                if seg.item() < tmp_loss.item():
-                    tmp_loss = seg
-            
-            loss_tot += tmp_loss
+            loss_tot += torch.min(torch.tensor(loss_list))
         
         return loss_tot/len(target)
 
@@ -104,3 +103,24 @@ class MutualConsistency(nn.Module):
 
         return (1 - self.gamma)*(self.dice(classic_mask, ground_truth_mask) + seg_tot/len(snake_GT_size)) + self.gamma * (self.dice(classic_mask, snake_mask) + consistency_tot/len(snake_classic_size))
 """
+
+
+if __name__ == "__main__":
+
+    snake_loss = SnakeLoss()
+
+    x = torch.tensor([
+        [0.5,0],
+        [0,1],
+        [1,1],
+        [1,0]
+    ])
+
+    target = torch.tensor([
+        [0,1],
+        [1,1],
+        [1,0],
+        [0,0]
+    ])
+
+    print(snake_loss([x], [target]).item())

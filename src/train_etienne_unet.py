@@ -231,8 +231,7 @@ if __name__ == "__main__" :
     mask_loss = {"bce": BCEWithLogitsLoss(), "dice": DiceLoss(), "mse" : MSELoss() }[loss_config["mask_loss"]]
     apply_sigmoid = loss_config["apply_sigmoid"]
 
-    criterion = {"mse" : MSELoss(), "l1" : L1Loss()}[loss_config["snake_loss"]]
-    snake_loss = SnakeLoss(criterion=criterion)
+    snake_loss = SnakeLoss()
     gamma = loss_config["gamma"]
     theta = loss_config["theta"]
 

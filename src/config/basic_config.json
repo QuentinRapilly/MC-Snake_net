@@ -26,7 +26,6 @@
 
     "loss" : {
         "mask_loss" : "dice",
-        "snake_loss" : "l1",
         "apply_sigmoid" : false,
         "gamma" : 0.0,
         "theta" : 0.9
