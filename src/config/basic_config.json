@@ -1,6 +1,6 @@
 {
     "settings" : {
-        "verbose" : false
+        "verbose" : true
         
     },
 
@@ -8,7 +8,7 @@
 
         "num_class" : 1,
 
-        "nb_snake_layers" : 4,
+        "nb_snake_layers" : 1,
 
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
@@ -28,12 +28,12 @@
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
         "gamma" : 0.0,
-        "theta" : 0.9
+        "theta" : 0.2
     },
 
 
     "active_contour" : {
-        "M" : 3
+        "M" : 6
     },
 
     "data" : {

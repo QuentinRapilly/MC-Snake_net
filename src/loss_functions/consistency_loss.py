@@ -43,7 +43,8 @@ class SnakeLoss(nn.Module):
                 loss_list.append(diff/nb_cp)
                 ref_snake = torch.roll(ref_snake, shifts=1, dims=0)
             
-            loss_tot += torch.min(torch.tensor(loss_list))
+            if nb_cp>0:
+                loss_tot += torch.min(torch.tensor(loss_list))
         
         return loss_tot/len(target)
 
