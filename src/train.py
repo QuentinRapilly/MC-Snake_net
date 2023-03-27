@@ -245,8 +245,7 @@ if __name__ == "__main__" :
 
         wandb.log({"loss": loss, "consistency_mask_loss" : consistency_mask_loss,\
                    "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
-                      "reference_snake_loss" : reference_snake_loss, "Some_samples" : sum_plot}) #"GT" : gt,\
-                        #"Probability map" : proba}), "Snake mask" : snake})
+                      "reference_snake_loss" : reference_snake_loss, "Some_samples" : sum_plot}) 
         
         if (epoch + 1)%scheduler_step == 0:
             scheduler.step()
