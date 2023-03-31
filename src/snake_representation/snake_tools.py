@@ -1,7 +1,7 @@
 import torch
 from .basis_function import compute_cubic_spline_weights, compute_exponential_spline_weights
 
-def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, basis_function : str = "cubic_spline", device = "cpu"):
+def sample_contour(control_points : torch.tensor, nb_samples : int, M : int, basis_function : str = "exponential_spline", device = "cpu"):
 
     if nb_samples == 0 :
         return torch.zeros((0,2)).to(device)

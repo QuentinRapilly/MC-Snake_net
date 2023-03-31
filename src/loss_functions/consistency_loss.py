@@ -22,13 +22,13 @@ class DiceLoss(nn.Module):
         
         return 1 - dice
     
-class SnakeLoss(nn.Module):
+class _SnakeLoss(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x, target):
-        loss_tot = 0
+        loss_tot = 0.0
 
         for i in range(len(target)):
             loss_list = list()
@@ -40,12 +40,49 @@ class SnakeLoss(nn.Module):
             for _ in range(nb_cp):
                 diff = torch.linalg.vector_norm(pred_snake-ref_snake, dim=-1)
                 diff = torch.sum(diff, dim=-1)
+
                 loss_list.append(diff/nb_cp)
                 ref_snake = torch.roll(ref_snake, shifts=1, dims=0)
             
             if nb_cp>0:
-                loss_tot += torch.min(torch.tensor(loss_list))
-        
+                to_add, _ = torch.min(torch.tensor(loss_list, requires_grad=True), dim=0)
+                loss_tot += to_add
+            
+        return loss_tot/len(target)
+
+
+class SnakeLoss(nn.Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self, x, target):
+        loss_tot = 0.0
+
+        for i in range(len(target)):
+
+            ref_snake = target[i].float()
+            pred_snake = x[i]
+
+            nb_cp = ref_snake.shape[0]
+
+            if nb_cp > 0 :
+                diff = torch.linalg.vector_norm(pred_snake-ref_snake, dim=-1)
+                min_loss = torch.sum(diff, dim=-1)/nb_cp
+
+
+                for _ in range(nb_cp - 1):
+                    ref_snake = torch.roll(ref_snake, shifts=1, dims=0)
+
+                    diff = torch.linalg.vector_norm(pred_snake-ref_snake, dim=-1)
+                    diff = torch.sum(diff, dim=-1)/nb_cp
+
+                    if diff < min_loss :
+                        min_loss = diff
+                
+                loss_tot += min_loss
+                    
+            
         return loss_tot/len(target)
 
 

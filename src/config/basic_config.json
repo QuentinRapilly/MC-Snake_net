@@ -8,32 +8,35 @@
 
         "num_class" : 1,
 
-        "nb_snake_layers" : 1,
+        "nb_snake_layers" : 5,
+
+        "unet_layer" : 5,
 
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
 
     },
 
     "optimizer" : {
-        "lr" : 0.001,
+        "unet_lr" : 10e-4,
+        "mlp_lr" : 10e-4,
         "weight_decay" : 0.001
     },
 
     "scheduler" : {
-        "gamma" : 0.9,
+        "gamma" : 0.95,
         "step_every_nb_epoch" : 5
     },
 
     "loss" : {
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
-        "gamma" : 0.0,
-        "theta" : 0.2
+        "gamma" : 0.2,
+        "theta" : 0.5
     },
 
 
     "active_contour" : {
-        "M" : 6
+        "M" : 8
     },
 
     "data" : {
@@ -46,7 +49,7 @@
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 1,
             "batchsize" : 4,
-            "nb_epochs" : 10,
+            "nb_epochs" : 30,
             "print_every_nb_epochs" : 1
         },
 

@@ -1,11 +1,11 @@
-# This file regroup the functions dedicated to create the pseudo label for one decoder, using the output of the other.
-
-from shapely.geometry import Polygon, Point
 import torch
-from torch.nn.functional import pad
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from cv2 import findContours, RETR_EXTERNAL, CHAIN_APPROX_NONE
 import numpy as np
+from math import ceil
+
+# This file regroup the functions dedicated to create the pseudo label for one decoder, using the output of the other.
+
 
 # Changer les deux fonctions pour passer en multiobjet
 
@@ -63,20 +63,45 @@ def mask_to_contour(mask : torch.tensor, only_one = True , add_last = False, ver
     return contours
 
 
+def limit_nb_points(contour : torch.tensor, max_points : int):
+
+    l = contour.shape[0]
+    r = max(1,ceil(l/max_points))
+
+    return contour[::r]
+
+
 
 if __name__ == "__main__":
 
-    W, H = 50, 50
+    #TEST = "CONTOUR"
+    TEST = "MASK"
 
-    contour = torch.tensor([[10,10],[30,10],[30,20],[20,20],[20,30],[30,40],[10,40]])
+    ### To test contour_to_mask feature ###
+    if TEST == "CONTOUR":
+        W, H = 50, 50
 
-    #contour = mask_to_contour(img, verbose=False, add_last=True)
-    mask = contour_to_mask(contour, W, H)
+        contour = torch.tensor([[10,10],[30,10],[30,20],[20,20],[20,30],[30,40],[10,40]])
+        mask = contour_to_mask(contour, W, H)
+
+        print(mask.shape)
+
+        plt.imshow(mask)
+        plt.plot(contour[:,1],contour[:,0])
+
+        plt.show()
 
 
-    #plt.imshow(mask)
-    #plt.plot(contour[0,:],contour[1,:])
+    
+    ### To test mask_to_contour feature ###
+    if TEST == "MASK":
+        mask = plt.imread("/net/serpico-fs2/qrapilly/data/Texture/Masks/mask0.bmp")
+        mask = torch.tensor(mask)
+        contour = mask_to_contour(mask)
+        print(mask.shape)
 
-    #plt.show()
+        plt.imshow(mask)
+        plt.plot(contour[::32,0], contour[::32,1])
+        plt.show()
 
 

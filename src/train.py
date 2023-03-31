@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from datasets.texture_dataset import TextureDataset
 from DL_models.mcsnakenet_clean import MCSnakeNet
 from loss_functions.consistency_loss import DiceLoss, SnakeLoss
-from loss_functions.consistency_tools import contour_to_mask, mask_to_contour
+from loss_functions.consistency_tools import contour_to_mask, mask_to_contour, limit_nb_points
 from snake_representation.snake_tools import sample_contour
 
 from time_management.time_management import time_manager, print_time_dict
@@ -26,19 +26,25 @@ def create_subplot_summary(images_dict : dict):
     fig = plt.figure(figsize = (20,10))
     n = len(images_dict)
     for i,key in enumerate(images_dict):
-        row = images_dict[key]
+        row = images_dict.get(key)
+
         batch_size = len(row)
-        for j,img in enumerate(row) : 
-            plt.subplot(n,batch_size,1+i*batch_size+j)
-            plt.imshow(img, cmap="gray", vmin=0, vmax=1)
+        for j,img in enumerate(row) :
+            plt.subplot(n,batch_size,1+i*batch_size+j) 
+            if type(img) == tuple:
+                contour, cp = img
+                plt.imshow(contour, cmap="gray", vmin=0, vmax=1)
+                plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
+            else:
+                plt.imshow(img, cmap="gray", vmin=0, vmax=1)
 
     return fig
 
 
 
-def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
+def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
           W : int, H : int, M : int, epoch : int, apply_sigmoid :\
-            bool, nb_polygon_edges :int = 50, nb_batch_to_plot : int = 2, verbose = True):
+            bool, nb_polygon_edges :int = 50, nb_batch_to_plot : int = 3, verbose = True):
 
 
     running_loss = 0.0
@@ -64,7 +70,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         B = train_loader.batch_size
         imgs, GT_masks = batch
 
-        optimizer.zero_grad()
+        unet_optimizer.zero_grad()
+        mlp_optimizer.zero_grad()
         
         # Model applied to input
         with time_manager(time_dict, "forward pass"):
@@ -88,8 +95,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         # Transforming GT mask and predicted mask into contour for loss computation
         with time_manager(time_dict, "masks to contours"):
             with torch.no_grad():
-                GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
-                classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
+                GT_contour = [limit_nb_points(mask_to_contour(mask).to(device)*rescaling_inv, 100) for mask in GT_masks]
+                classic_contour = [limit_nb_points(mask_to_contour((mask>0.5)).to(device)*rescaling_inv,100) for mask in classic_mask]
 
 
         # Sampling the predicted snake to compute the snake loss
@@ -111,14 +118,14 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
             consistency_mask_loss = mask_loss(classic_mask, snake_mask)
             consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
 
-            loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss) +\
-                gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
+            loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss)\
+                #+ gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
 
 
         # Backward gradient step
         with time_manager(time_dict, "backward pass"):
             loss.backward()
-            optimizer.step()
+            unet_optimizer.step()
 
         running_consistency_mask_loss += consistency_mask_loss.item()
         running_consistency_snake_loss += consistency_snake_loss.item()
@@ -132,7 +139,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
             img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
             img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
             img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [snake_mask[i].detach().cpu() for i in range(B)]
+            img_dict["snakes"] += [(snake_mask[i].detach().cpu(), (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
     
     if verbose :
         print_time_dict(time_dict)
@@ -195,12 +202,15 @@ if __name__ == "__main__" :
                         nb_control_points=M, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
 
 
+
     # Initializing the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_config["lr"])
+    unet_optimizer = torch.optim.Adam(model.layers.parameters(), lr=optimizer_config["unet_lr"])
+    mlp_optimizer = torch.optim.Adam(model.snake_layers.parameters(), lr=optimizer_config["mlp_lr"])
 
     scheduler_config = config_dic["scheduler"]
     scheduler_step = scheduler_config["step_every_nb_epoch"]
-    scheduler = ExponentialLR(optimizer=optimizer, gamma=scheduler_config["gamma"])
+    unet_scheduler = ExponentialLR(optimizer=unet_optimizer, gamma=scheduler_config["gamma"])
+    mlp_scheduler = ExponentialLR(optimizer=mlp_optimizer, gamma=scheduler_config["gamma"])
 
 
     # Initializing the loss 
@@ -220,7 +230,7 @@ if __name__ == "__main__" :
         
         # track hyperparameters and run metadata
         config={
-        "learning_rate": optimizer_config["lr"],
+        "learning_rate": optimizer_config["unet_lr"],
         "architecture": "UNET",
         "dataset": "Texture",
         "epochs": train_config["nb_epochs"]
@@ -235,7 +245,7 @@ if __name__ == "__main__" :
         epoch_dict = {}
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
-                    train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
+                    train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
                         snake_loss=snake_loss, gamma=gamma, theta=theta,\
                             M=M, W=W, H=H, epoch=epoch, verbose=verbose)
 
@@ -247,8 +257,11 @@ if __name__ == "__main__" :
                    "consistency_snake_loss" : consistency_snake_loss, "reference_mask_loss" : reference_mask_loss,\
                       "reference_snake_loss" : reference_snake_loss, "Some_samples" : sum_plot}) 
         
+        plt.close()
+        
         if (epoch + 1)%scheduler_step == 0:
-            scheduler.step()
+            unet_scheduler.step()
+            mlp_scheduler.step()
         
 
     wandb.finish()
