@@ -40,7 +40,7 @@ def polar_to_cartesian_cp(c : torch.Tensor, r : torch.Tensor, theta : torch.Tens
 
 def sample_circle(M : int = 6, r : float =0.3) -> torch.Tensor:
 
-    theta = 2*torch.arange(0, M, step = 1)*torch.pi/M
+    theta = -2*torch.arange(0, M, step = 1)*torch.pi/M
     x = r*torch.cos(theta) + 0.5
     y = r*torch.sin(theta) + 0.5
 

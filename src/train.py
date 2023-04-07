@@ -33,7 +33,7 @@ def create_subplot_summary(images_dict : dict):
             plt.subplot(n,batch_size,1+i*batch_size+j) 
             if type(img) == tuple:
                 contour, cp = img
-                plt.imshow(contour, cmap="gray", vmin=0, vmax=1)
+                plt.scatter(contour[:,1],contour[:,0], c="blue", marker=".")
                 plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
                 for k in range(len(cp)):
                     plt.text(cp[k,1], cp[k,0], str(k), c="red")
@@ -149,7 +149,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
             img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
             img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
             img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [(snake_mask[i].detach().cpu(), (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
+            img_dict["snakes"] += [((snake_for_mask[i]*rescaling_vect).detach().cpu(), (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
     
     if verbose :
         print_time_dict(time_dict)
