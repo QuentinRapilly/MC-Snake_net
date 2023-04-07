@@ -151,7 +151,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
             img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
             img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
             img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), GT_contour[i].detach.cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
+            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), GT_contour[i].detach().cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
                                     (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
     
     if verbose :
