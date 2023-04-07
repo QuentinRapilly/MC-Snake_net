@@ -89,7 +89,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         snake_cp = sigmoid(snake_cp)
 
         # Control points format (2M) -> (M,2)
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M+1, 2))
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
         if use_polar :
             reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
