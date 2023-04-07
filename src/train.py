@@ -34,8 +34,8 @@ def create_subplot_summary(images_dict : dict):
             if type(img) == tuple:
                 GT_img, GT_contour, contour, cp = img
                 plt.imshow(GT_img, cmap="gray", vmin=0, vmax=1)
-                plt.scatter(GT_contour[:,1], GT_contour[:,0], c="blue", marker=".")
-                plt.scatter(contour[:,1],contour[:,0], c="blue", marker=".")
+                plt.scatter(GT_contour[:,1], GT_contour[:,0], c="blue", marker=".", cmap=[ind for ind in range(len(contour))])
+                plt.scatter(contour[:,1],contour[:,0], c="blue", marker=".", cmap=[ind for ind in range(len(contour))])
                 plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
                 for k in range(len(cp)):
                     plt.text(cp[k,1], cp[k,0], str(k), c="red")
