@@ -17,8 +17,8 @@
     },
 
     "optimizer" : {
-        "unet_lr" : 10e-3,
-        "mlp_lr" : 10e-5,
+        "unet_lr" : 10e-1,
+        "mlp_lr" : 10e-2,
         "weight_decay" : 0.001
     },
 
@@ -47,9 +47,9 @@
 
         "train_set" : {
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
-            "set_index" : 1,
+            "set_index" : 0,
             "batchsize" : 4,
-            "nb_epochs" : 30,
+            "nb_epochs" : 100,
             "print_every_nb_epochs" : 1
         },
 
