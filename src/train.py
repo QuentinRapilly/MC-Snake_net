@@ -87,7 +87,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         snake_cp = sigmoid(snake_cp)
 
         # Control points format (2M) -> (M,2)
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M+1, 2))
 
         ### Comment to remove polar coordinates ###
         c = reshaped_cp[...,0]
@@ -95,6 +95,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         theta = reshaped_cp[...,1:,1]
 
         reshaped_cp = polar_to_cartesian_cp(c, r, theta)
+        print(reshaped_cp)
         ###########################################
 
 
@@ -208,7 +209,7 @@ if __name__ == "__main__" :
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=M+2, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
+                        nb_control_points=M+1, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
 
 
 

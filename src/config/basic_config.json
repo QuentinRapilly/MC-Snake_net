@@ -17,8 +17,8 @@
     },
 
     "optimizer" : {
-        "unet_lr" : 10e-4,
-        "mlp_lr" : 10e-4,
+        "unet_lr" : 10e-3,
+        "mlp_lr" : 10e-5,
         "weight_decay" : 0.001
     },
 
@@ -30,13 +30,13 @@
     "loss" : {
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
-        "gamma" : 0.2,
-        "theta" : 0.5
+        "gamma" : 0.0,
+        "theta" : 0.0
     },
 
 
     "active_contour" : {
-        "M" : 8
+        "M" : 6
     },
 
     "data" : {
