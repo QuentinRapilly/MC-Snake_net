@@ -17,7 +17,7 @@ from datasets.texture_dataset import TextureDataset
 from DL_models.mcsnakenet_clean import MCSnakeNet
 from loss_functions.consistency_loss import DiceLoss, SnakeLoss
 from loss_functions.consistency_tools import contour_to_mask, mask_to_contour, limit_nb_points
-from snake_representation.snake_tools import sample_contour
+from snake_representation.snake_tools import sample_contour, polar_to_cartesian_cp
 
 from time_management.time_management import time_manager, print_time_dict
 
@@ -81,14 +81,22 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         # Some loss function (as BCEWithLogitsLoss) apply sigmoid so we don't need to in loss computation
         if apply_sigmoid :
             classic_mask = sigmoid(classic_mask)
-
+        
         # we want our control points to be in [0;1] in a first time so we apply sigmoid, 
         # then we will be able to rescale them in WxH (our images shape)
         snake_cp = sigmoid(snake_cp)
 
-
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+
+        ### Comment to remove polar coordinates ###
+        c = reshaped_cp[...,0]
+        r = reshaped_cp[...,1:,0]
+        theta = reshaped_cp[...,1:,1]
+
+        reshaped_cp = polar_to_cartesian_cp(c, r, theta)
+        ###########################################
+
 
         classic_mask = torch.squeeze(classic_mask)
 
@@ -195,11 +203,12 @@ if __name__ == "__main__" :
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])
 
 
+    # Attention, bien enlevé le +2 si on est plus en polaire
 
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=M, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
+                        nb_control_points=M+2, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
 
 
 
