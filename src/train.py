@@ -36,7 +36,7 @@ def create_subplot_summary(images_dict : dict):
                 plt.imshow(contour, cmap="gray", vmin=0, vmax=1)
                 plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
                 for k in range(len(cp)):
-                    plt.text(cp[k,0], cp[k,1], str(k), c="red")
+                    plt.text(cp[k,1], cp[k,0], str(k), c="red")
             else:
                 plt.imshow(img, cmap="gray", vmin=0, vmax=1)
 
@@ -95,7 +95,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
             reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
 
         if predict_dx_dy :
-            init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.2), dim=0).to(device=device)
+            init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.35), dim=0).to(device=device)
             d_cp = 2*reshaped_cp - 1 
             reshaped_cp = init_cp + d_cp
 
