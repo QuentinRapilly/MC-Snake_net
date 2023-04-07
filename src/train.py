@@ -17,7 +17,7 @@ from datasets.texture_dataset import TextureDataset
 from DL_models.mcsnakenet_clean import MCSnakeNet
 from loss_functions.consistency_loss import DiceLoss, SnakeLoss
 from loss_functions.consistency_tools import contour_to_mask, mask_to_contour, limit_nb_points
-from snake_representation.snake_tools import sample_contour, polar_to_cartesian_cp
+from snake_representation.snake_tools import sample_contour, polar_to_cartesian_cp, sample_circle
 
 from time_management.time_management import time_manager, print_time_dict
 
@@ -35,6 +35,8 @@ def create_subplot_summary(images_dict : dict):
                 contour, cp = img
                 plt.imshow(contour, cmap="gray", vmin=0, vmax=1)
                 plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
+                for i in range(len(cp)):
+                    plt.text(cp[i,0], cp[i,1], str(i))
             else:
                 plt.imshow(img, cmap="gray", vmin=0, vmax=1)
 
@@ -43,8 +45,8 @@ def create_subplot_summary(images_dict : dict):
 
 
 def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
-          W : int, H : int, M : int, epoch : int, apply_sigmoid :\
-            bool, nb_polygon_edges :int = 50, nb_batch_to_plot : int = 3, verbose = True):
+          W : int, H : int, M : int, epoch : int, apply_sigmoid : bool, nb_polygon_edges :int = 50,\
+            nb_batch_to_plot : int = 3, use_polar = False, predict_dx_dy = True, device : str = "cpu", verbose = True):
 
 
     running_loss = 0.0
@@ -89,14 +91,13 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M+1, 2))
 
-        ### Comment to remove polar coordinates ###
-        c = reshaped_cp[...,0]
-        r = reshaped_cp[...,1:,0]
-        theta = reshaped_cp[...,1:,1]
+        if use_polar :
+            reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
 
-        reshaped_cp = polar_to_cartesian_cp(c, r, theta)
-        print(reshaped_cp)
-        ###########################################
+        if predict_dx_dy :
+            init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.2), dim=0)
+            d_cp = 2*reshaped_cp - 1 
+            reshaped_cp = init_cp + d_cp
 
 
         classic_mask = torch.squeeze(classic_mask)
@@ -209,7 +210,7 @@ if __name__ == "__main__" :
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=M+1, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
+                        nb_control_points=M, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
 
 
 
@@ -256,8 +257,7 @@ if __name__ == "__main__" :
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
                     train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                        snake_loss=snake_loss, gamma=gamma, theta=theta,\
-                            M=M, W=W, H=H, epoch=epoch, verbose=verbose)
+                        snake_loss=snake_loss, gamma=gamma, theta=theta, M=M, W=W, H=H, epoch=epoch, device = device,verbose=verbose)
 
         print_time_dict(epoch_dict)
 
