@@ -35,8 +35,8 @@ def create_subplot_summary(images_dict : dict):
                 contour, cp = img
                 plt.imshow(contour, cmap="gray", vmin=0, vmax=1)
                 plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
-                for i in range(len(cp)):
-                    plt.text(cp[i,0], cp[i,1], str(i))
+                for k in range(len(cp)):
+                    plt.text(cp[k,0], cp[k,1], str(k))
             else:
                 plt.imshow(img, cmap="gray", vmin=0, vmax=1)
 
