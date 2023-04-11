@@ -34,11 +34,11 @@ def create_subplot_summary(images_dict : dict):
             if type(img) == tuple:
                 GT_img, GT_contour, contour, cp = img
                 plt.imshow(GT_img, cmap="gray", vmin=0, vmax=1)
-                plt.scatter(GT_contour[:,1], GT_contour[:,0], c=[ind for ind in range(len(GT_contour))], marker=".", cmap="Greens")
-                plt.scatter(contour[:,1],contour[:,0], c=[ind for ind in range(len(contour))], marker=".", cmap="Blues")
-                plt.scatter(cp[:,1], cp[:,0], marker="x", c="red")
+                plt.scatter(GT_contour[:,0], GT_contour[:,1], c=[ind for ind in range(len(GT_contour))], marker=".", cmap="Greens")
+                plt.scatter(contour[:,0],contour[:,1], c=[ind for ind in range(len(contour))], marker=".", cmap="Blues")
+                plt.scatter(cp[:,0], cp[:,1], marker="x", c="red")
                 for k in range(len(cp)):
-                    plt.text(cp[k,1], cp[k,0], str(k), c="red")
+                    plt.text(cp[k,0], cp[k,1], str(k), c="red")
             else:
                 plt.imshow(img, cmap="gray", vmin=0, vmax=1)
 
@@ -110,7 +110,6 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
                 GT_contour = [limit_nb_points(mask_to_contour(mask).to(device)*rescaling_inv, 100) for mask in GT_masks]
                 classic_contour = [limit_nb_points(mask_to_contour((mask>0.5)).to(device)*rescaling_inv,100) for mask in classic_mask]
 
-
         # Sampling the predicted snake to compute the snake loss
         with time_manager(time_dict, "sampling contours"):
             snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
@@ -151,7 +150,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
             img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
             img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
             img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), GT_contour[i].detach().cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
+            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), (GT_contour[i]*rescaling_vect).detach().cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
                                     (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
     
     if verbose :

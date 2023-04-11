@@ -8,7 +8,7 @@
 
         "num_class" : 1,
 
-        "nb_snake_layers" : 5,
+        "nb_snake_layers" : 1,
 
         "unet_layer" : 5,
 
@@ -17,8 +17,8 @@
     },
 
     "optimizer" : {
-        "unet_lr" : 10e-1,
-        "mlp_lr" : 10e-2,
+        "unet_lr" : 10e-3,
+        "mlp_lr" : 10e-5,
         "weight_decay" : 0.001
     },
 
