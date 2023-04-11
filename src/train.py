@@ -48,7 +48,7 @@ def create_subplot_summary(images_dict : dict):
 
 def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
           W : int, H : int, M : int, epoch : int, apply_sigmoid : bool, nb_polygon_edges :int = 50,\
-            nb_batch_to_plot : int = 3, use_polar = False, predict_dx_dy = True, device : str = "cpu", verbose = True):
+            nb_batch_to_plot : int = 3, use_polar = False, predict_dx_dy = False, device : str = "cpu", verbose = True):
 
 
     running_loss = 0.0
@@ -207,8 +207,6 @@ if __name__ == "__main__" :
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])
 
 
-    # Attention, bien enlevé le +2 si on est plus en polaire
-
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
@@ -239,7 +237,7 @@ if __name__ == "__main__" :
     # Tracking of the loss and some images during the training
     run = wandb.init(
         # set the wandb project where this run will be logged
-        project="MC-snake_net",
+        project=f"MC-snake_net-subset_{train_set_index}",
         
         # track hyperparameters and run metadata
         config={
