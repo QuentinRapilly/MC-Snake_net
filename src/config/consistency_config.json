@@ -1,0 +1,63 @@
+{
+    "settings" : {
+        "verbose" : true,
+        "test_every_nb_epochs" : 1,
+        "no_GT_prop" : 0.6
+    },
+
+    "model" : {
+
+        "num_class" : 1,
+
+        "nb_snake_layers" : 3,
+
+        "unet_layer" : 5,
+
+        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
+
+    },
+
+    "optimizer" : {
+        "unet_lr" : 10e-4,
+        "mlp_lr" : 10e-5,
+        "weight_decay" : 0.001
+    },
+
+    "scheduler" : {
+        "gamma" : 0.95,
+        "step_every_nb_epoch" : 2
+    },
+
+    "loss" : {
+        "mask_loss" : "dice",
+        "apply_sigmoid" : false,
+        "gamma" : 0.2,
+        "theta" : 0.5
+    },
+
+
+    "active_contour" : {
+        "M" : 16
+    },
+
+    "data" : {
+
+        "nb_channels" : 1,
+
+        "image_size" : [512,512],
+
+        "train_set" : {
+            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
+            "set_index" : 1,
+            "batchsize" : 4,
+            "nb_epochs" : 20,
+            "print_every_nb_epochs" : 1
+        },
+
+        "test_set" : {
+            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
+            "set_index" : 2,
+            "batchsize" : 4
+        }  
+    }
+}

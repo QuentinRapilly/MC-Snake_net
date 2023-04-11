@@ -2,6 +2,8 @@ import argparse
 import json
 from datetime import datetime
 from os.path import join
+from random import shuffle
+from math import ceil, floor
 
 import torch
 from torch.utils.data import DataLoader
@@ -23,7 +25,13 @@ from snake_representation.snake_tools import sample_contour, sample_circle
 from time_management.time_management import time_manager, print_time_dict
 
 
-def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
+#def tmp_name():
+
+
+
+
+
+def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_GT, mask_loss, snake_loss, theta, gamma,\
           W : int, H : int, M : int, apply_sigmoid : bool, nb_polygon_edges :int = 100,\
             nb_batch_to_plot : int = 3, predict_dx_dy = False, device : str = "cpu", verbose = True):
 
@@ -35,9 +43,6 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
 
     running_consistency_mask_loss = 0.0
     running_consistency_snake_loss = 0.0
-
-    img_dict = {"images" : [], "GT" : [], "masks": [], "snakes" : []}
-    time_dict = {}
     
     rescaling_vect = torch.tensor([W, H]).to(device)
     rescaling_inv = torch.tensor([1/W, 1/H]).to(device)
@@ -46,22 +51,18 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
 
     for k, batch in enumerate(train_loader):
 
-        print("Progress of the epoch : {}%          \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
+        print("Progress of the epoch : {}%                           \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
 
-        B = train_loader.batch_size
         imgs, GT_masks = batch
 
         unet_optimizer.zero_grad()
         mlp_optimizer.zero_grad()
         
         # Model applied to input
-        with time_manager(time_dict, "forward pass"):
-            classic_mask, snake_cp = model(imgs)
+        classic_mask, snake_cp = model(imgs)
         
-
         # Some loss function (as BCEWithLogitsLoss) apply sigmoid so we don't need to in loss computation
-        if apply_sigmoid :
-            classic_mask = sigmoid(classic_mask)
+        classic_mask = sigmoid(classic_mask)
         
         # we want our control points to be in [0;1] in a first time so we apply sigmoid, 
         # then we will be able to rescale them in WxH (our images shape)
@@ -70,73 +71,56 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
 
-        #if use_polar :
-        #    reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
-
-        if predict_dx_dy :
-            init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.35), dim=0).to(device=device)
-            d_cp = 2*reshaped_cp - 1 
-            reshaped_cp = init_cp + d_cp
-
-
         classic_mask = torch.squeeze(classic_mask)
 
         # Transforming GT mask and predicted mask into contour for loss computation
-        with time_manager(time_dict, "masks to contours"):
-            with torch.no_grad():
-                GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
-                classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
+        with torch.no_grad():
+            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
 
         # Sampling the predicted snake to compute the snake loss
-        with time_manager(time_dict, "sampling contours"):
-            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
-            
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+        
         # Creating mask form contour predicted by the snake part
-        with time_manager(time_dict, "contours to masks"):
-            with torch.no_grad():
-                snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
+        with torch.no_grad():
+            snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
 
-        # Computing the different part of the loss then the global loss
-        with time_manager(time_dict, "loss computation"):
+        consistency_mask_loss = mask_loss(classic_mask, snake_mask)
+        consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
+
+        loss = theta*consistency_mask_loss + (1-theta)*consistency_snake_loss
+
+
+        if have_GT[k]:
+            with torch.no_grad():
+                GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
+
+            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+
+            # Computing the different part of the loss then the global loss
             reference_mask_loss = mask_loss(classic_mask, GT_masks)
             reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
 
-            consistency_mask_loss = mask_loss(classic_mask, snake_mask)
-            consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
 
             loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss)\
-                + gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
+                + gamma*loss
+            
+            running_reference_mask_loss += reference_mask_loss.item()
+            running_reference_snake_loss += reference_snake_loss.item()
 
 
         # Backward gradient step
-        with time_manager(time_dict, "backward pass"):
-            loss.backward()
-            unet_optimizer.step()
-            mlp_optimizer.step()
+        loss.backward()
+        unet_optimizer.step()
+        mlp_optimizer.step()
 
         running_consistency_mask_loss += consistency_mask_loss.item()
         running_consistency_snake_loss += consistency_snake_loss.item()
-        running_reference_mask_loss += reference_mask_loss.item()
-        running_reference_snake_loss += reference_snake_loss.item()
 
         running_loss += loss.item()
 
-        # Choosing some image to plot in the WAndB recap
-        if k < nb_batch_to_plot :
-            img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
-            img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
-            img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), (GT_contour[i]*rescaling_vect).detach().cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
-                                    (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
-    
-    if verbose :
-        print_time_dict(time_dict)
-
-
     return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N,\
-        running_reference_mask_loss / N, running_reference_snake_loss / N, img_dict
+        running_reference_mask_loss / N, running_reference_snake_loss / N
 
 
 def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : int, M : int,\
@@ -210,8 +194,6 @@ def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : i
         loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss)\
             + gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
 
-
-
         running_consistency_mask_loss += consistency_mask_loss.item()
         running_consistency_snake_loss += consistency_snake_loss.item()
         running_reference_mask_loss += reference_mask_loss.item()
@@ -242,7 +224,7 @@ if __name__ == "__main__" :
     print(f"Current device : {device}")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str, help="Configuration file", default="./src/config/basic_config.json")
+    parser.add_argument("-c", "--config", type=str, help="Configuration file", default="./src/config/consistency_config.json")
     args = parser.parse_args()
 
     config = args.config
@@ -259,6 +241,7 @@ if __name__ == "__main__" :
 
     verbose = settings_config["verbose"]
     test_every_nb_epochs = settings_config["test_every_nb_epochs"]
+    no_GT_prop = settings_config["no_GT_prop"]
 
     model_config = config_dic["model"]
     optimizer_config = config_dic["optimizer"]
@@ -277,6 +260,12 @@ if __name__ == "__main__" :
 
     train_loader = DataLoader(train_set, batch_size=train_config["batchsize"])
     test_loader = DataLoader(test_set, batch_size=test_config["batchsize"])
+
+    nb_batch = len(train_loader)
+    have_GT = [True for _ in range(ceil(nb_batch*(1-no_GT_prop)))] + [False for _ in range(floor(nb_batch*no_GT_prop))]
+    shuffle(have_GT)
+
+    print("Proportion of batch having a GT : {}%".format(100*torch.sum(torch.tensor(have_GT))/len(have_GT)))
 
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
@@ -307,7 +296,7 @@ if __name__ == "__main__" :
     # Tracking of the loss and some images during the training
     run = wandb.init(
         # set the wandb project where this run will be logged
-        project=f"MC-snake_net-subset_{train_set_index}",
+        project=f"MC-snake_net_consistency-subset_{train_set_index}",
         
         # track hyperparameters and run metadata
         config={
@@ -325,17 +314,15 @@ if __name__ == "__main__" :
         print(f"## Starting epoch {epoch} ##")
         epoch_dict = {}
         with time_manager(epoch_dict, f"epoch {epoch}"):
-            loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
-                    train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
+            loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss = \
+                    train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_GT=have_GT, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
                         snake_loss=snake_loss, gamma=gamma, theta=theta, M=M, W=W, H=H, device = device, verbose=verbose)
 
         print_time_dict(epoch_dict)
 
-        sum_plot = create_subplot_summary(images_dict=img_dict)
-
         log_dict = {"train/loss": loss, "train/consistency-mask_loss" : consistency_mask_loss,\
                    "train/consistency-snake_loss" : consistency_snake_loss, "train/reference-mask_loss" : reference_mask_loss,\
-                      "train/reference-snake_loss" : reference_snake_loss, "train_samples" : sum_plot}
+                      "train/reference-snake_loss" : reference_snake_loss}
 
         
         
