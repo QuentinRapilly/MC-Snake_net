@@ -18,14 +18,14 @@ from datasets.texture_dataset import TextureDataset
 from DL_models.mcsnakenet_clean import MCSnakeNet
 from loss_functions.consistency_loss import DiceLoss, SnakeLoss
 from loss_functions.consistency_tools import contour_to_mask, mask_to_contour, limit_nb_points
-from snake_representation.snake_tools import sample_contour, sample_circle
+from snake_representation.snake_tools import sample_contour, sample_circle, polar_to_cartesian_cp
 
 from time_management.time_management import time_manager, print_time_dict
 
 
 def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
-          W : int, H : int, M : int, apply_sigmoid : bool, nb_polygon_edges :int = 100,\
-            nb_batch_to_plot : int = 3, predict_dx_dy = False, device : str = "cpu", verbose = True):
+          W : int, H : int, apply_sigmoid : bool, nb_polygon_edges :int = 100, nb_batch_to_plot : int = 3,\
+            predict_dx_dy = False, use_polar = False, device : str = "cpu", verbose = True):
 
 
     running_loss = 0.0
@@ -68,12 +68,13 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         snake_cp = sigmoid(snake_cp)
 
         # Control points format (2M) -> (M,2)
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
 
-        #if use_polar :
-        #    reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
+        if use_polar :
+            reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
 
         if predict_dx_dy :
+            M = reshaped_cp.shape[1]
             init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.35), dim=0).to(device=device)
             d_cp = 2*reshaped_cp - 1 
             reshaped_cp = init_cp + d_cp
@@ -89,9 +90,9 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
 
         # Sampling the predicted snake to compute the snake loss
         with time_manager(time_dict, "sampling contours"):
-            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, device = device) for cp in reshaped_cp]
             
         # Creating mask form contour predicted by the snake part
         with time_manager(time_dict, "contours to masks"):
@@ -139,9 +140,9 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         running_reference_mask_loss / N, running_reference_snake_loss / N, img_dict
 
 
-def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : int, M : int,\
-         apply_sigmoid : bool, nb_polygon_edges :int = 100, nb_batch_to_plot : int = 3,\
-              predict_dx_dy = False, device : str = "cpu"):
+def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : int, apply_sigmoid : bool,\
+         nb_polygon_edges :int = 100, nb_batch_to_plot : int = 3, predict_dx_dy = False, use_polar = False,\
+            device : str = "cpu"):
     
     running_loss = 0.0
 
@@ -177,9 +178,13 @@ def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : i
         snake_cp = sigmoid(snake_cp)
 
         # Control points format (2M) -> (M,2)
-        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], M, 2))
+        reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
+
+        if use_polar :
+            reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
 
         if predict_dx_dy :
+            M = reshaped_cp.shape[1]
             init_cp = torch.unsqueeze(sample_circle(M = M, r = 0.35), dim=0).to(device=device)
             d_cp = 2*reshaped_cp - 1 
             reshaped_cp = init_cp + d_cp
@@ -192,9 +197,9 @@ def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : i
             classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
 
         # Sampling the predicted snake to compute the snake loss
-        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, device = device) for cp in reshaped_cp]
             
         # Creating mask form contour predicted by the snake part
         with torch.no_grad():
@@ -266,6 +271,9 @@ if __name__ == "__main__" :
     loss_config = config_dic["loss"]
 
     M = snake_config["M"]
+    use_polar = model_config["use_polar"]
+
+    M_prime = M+1 if use_polar else M
 
     W, H = config_dic["data"]["image_size"]
 
@@ -281,7 +289,7 @@ if __name__ == "__main__" :
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
                        padding_mode="zeros", train_bn=False, inner_normalisation='BatchNorm', img_shape=(W,H),\
-                        nb_control_points=M, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
+                        nb_control_points=M_prime, nb_snake_layers=model_config["nb_snake_layers"]).to(device)
 
 
     # Initializing the optimizer
@@ -327,7 +335,7 @@ if __name__ == "__main__" :
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
                     train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                        snake_loss=snake_loss, gamma=gamma, theta=theta, M=M, W=W, H=H, device = device, verbose=verbose)
+                        snake_loss=snake_loss, gamma=gamma, theta=theta, W=W, H=H, use_polar=use_polar, device = device, verbose=verbose)
 
         print_time_dict(epoch_dict)
 
@@ -343,7 +351,7 @@ if __name__ == "__main__" :
         if (1 + epoch) % test_every_nb_epochs == 0:
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
                 test(model, test_loader, mask_loss=mask_loss, snake_loss=snake_loss, theta=theta, gamma=gamma,\
-                     apply_sigmoid=apply_sigmoid, M=M, W=W, H=H, device = device)
+                     apply_sigmoid=apply_sigmoid, W=W, H=H, use_polar=use_polar, device = device)
             
             sum_plot = create_subplot_summary(images_dict=img_dict)
 

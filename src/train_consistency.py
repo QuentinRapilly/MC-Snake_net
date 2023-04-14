@@ -82,8 +82,8 @@ def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_G
                 classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
 
             # Sampling the predicted snake to compute the snake loss
-            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, device = device) for cp in reshaped_cp]
             
             # Creating mask form contour predicted by the snake part
             with torch.no_grad():
@@ -103,7 +103,7 @@ def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_G
             with torch.no_grad():
                 GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
 
-            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+            snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
 
             # Computing the different part of the loss then the global loss
             reference_mask_loss = mask_loss(classic_mask, GT_masks)
@@ -182,9 +182,9 @@ def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : i
             classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
 
         # Sampling the predicted snake to compute the snake loss
-        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+        snake_size_of_GT = [sample_contour(cp, nb_samples = GT_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], device = device) for i,cp in enumerate(reshaped_cp)]
+        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, device = device) for cp in reshaped_cp]
             
         # Creating mask form contour predicted by the snake part
         with torch.no_grad():

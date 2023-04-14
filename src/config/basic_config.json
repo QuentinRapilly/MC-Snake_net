@@ -12,7 +12,9 @@
 
         "unet_layer" : 5,
 
-        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
+        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake",
+
+        "use_polar" : false
 
     },
 
