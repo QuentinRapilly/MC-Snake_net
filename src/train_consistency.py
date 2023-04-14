@@ -47,12 +47,14 @@ def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_G
     rescaling_vect = torch.tensor([W, H]).to(device)
     rescaling_inv = torch.tensor([1/W, 1/H]).to(device)
 
-    N = len(train_loader)
+    N = 0
 
     for k, batch in enumerate(train_loader):
 
         print("Progress of the epoch : {}%                           \r".format(round(k/len(train_loader)*100,ndigits=2)), end="")
 
+        loss = 0
+        
         imgs, GT_masks = batch
 
         unet_optimizer.zero_grad()
@@ -73,25 +75,31 @@ def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_G
 
         classic_mask = torch.squeeze(classic_mask)
 
-        # Transforming GT mask and predicted mask into contour for loss computation
-        with torch.no_grad():
-            classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
+        if gamma > 0 :
 
-        # Sampling the predicted snake to compute the snake loss
-        snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
-        snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
-        
-        # Creating mask form contour predicted by the snake part
-        with torch.no_grad():
-            snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
+            # Transforming predicted mask into contour for loss computation
+            with torch.no_grad():
+                classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
 
-        consistency_mask_loss = mask_loss(classic_mask, snake_mask)
-        consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
+            # Sampling the predicted snake to compute the snake loss
+            snake_size_of_classic = [sample_contour(cp, nb_samples = classic_contour[i].shape[0], M=M, device = device) for i,cp in enumerate(reshaped_cp)]
+            snake_for_mask = [sample_contour(cp, nb_samples = nb_polygon_edges, M=M, device = device) for cp in reshaped_cp]
+            
+            # Creating mask form contour predicted by the snake part
+            with torch.no_grad():
+                snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
 
-        loss = theta*consistency_mask_loss + (1-theta)*consistency_snake_loss
+            consistency_mask_loss = mask_loss(classic_mask, snake_mask)
+            consistency_snake_loss = snake_loss(snake_size_of_classic, classic_contour)
+
+            running_consistency_mask_loss += consistency_mask_loss.item()
+            running_consistency_snake_loss += consistency_snake_loss.item()
+
+            loss = gamma*(theta*consistency_mask_loss + (1-theta)*consistency_snake_loss)
 
 
         if have_GT[k]:
+
             with torch.no_grad():
                 GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
 
@@ -102,22 +110,20 @@ def train_consistency(model, unet_optimizer, mlp_optimizer, train_loader, have_G
             reference_snake_loss = snake_loss(snake_size_of_GT, GT_contour)
 
 
-            loss = (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss)\
-                + gamma*loss
+            loss += (1 - gamma)*(theta*reference_mask_loss + (1-theta)*reference_snake_loss)
             
             running_reference_mask_loss += reference_mask_loss.item()
             running_reference_snake_loss += reference_snake_loss.item()
 
+        if loss != 0:
+            # Backward gradient step
+            loss.backward()
+            unet_optimizer.step()
+            mlp_optimizer.step()
+            running_loss += loss.item()
+            N += 1
 
-        # Backward gradient step
-        loss.backward()
-        unet_optimizer.step()
-        mlp_optimizer.step()
-
-        running_consistency_mask_loss += consistency_mask_loss.item()
-        running_consistency_snake_loss += consistency_snake_loss.item()
-
-        running_loss += loss.item()
+        
 
     return running_loss / N, running_consistency_mask_loss / N, running_consistency_snake_loss / N,\
         running_reference_mask_loss / N, running_reference_snake_loss / N
@@ -288,7 +294,9 @@ if __name__ == "__main__" :
     apply_sigmoid = loss_config["apply_sigmoid"]
 
     snake_loss = SnakeLoss()
-    gamma = loss_config["gamma"]
+    gamma_config = loss_config["gamma"]
+    gamma_values = gamma_config["values"]
+    gamma_epochs = gamma_config["epochs"]
     theta = loss_config["theta"]
 
 
@@ -311,7 +319,10 @@ if __name__ == "__main__" :
 
     for epoch in range(train_config["nb_epochs"]):
 
-        print(f"## Starting epoch {epoch} ##")
+        if epoch in gamma_epochs:
+            gamma = gamma_values[gamma_epochs.index(epoch)]
+
+        print(f"## Starting epoch {epoch}, current gamma : {gamma} ##")
         epoch_dict = {}
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss = \
@@ -323,8 +334,6 @@ if __name__ == "__main__" :
         log_dict = {"train/loss": loss, "train/consistency-mask_loss" : consistency_mask_loss,\
                    "train/consistency-snake_loss" : consistency_snake_loss, "train/reference-mask_loss" : reference_mask_loss,\
                       "train/reference-snake_loss" : reference_snake_loss}
-
-        
         
 
         if (1 + epoch) % test_every_nb_epochs == 0:

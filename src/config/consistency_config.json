@@ -2,7 +2,7 @@
     "settings" : {
         "verbose" : true,
         "test_every_nb_epochs" : 1,
-        "no_GT_prop" : 0.6
+        "no_GT_prop" : 0.5
     },
 
     "model" : {
@@ -25,13 +25,16 @@
 
     "scheduler" : {
         "gamma" : 0.95,
-        "step_every_nb_epoch" : 2
+        "step_every_nb_epoch" : 30
     },
 
     "loss" : {
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
-        "gamma" : 0.2,
+        "gamma" : {
+            "values" : [0, 0.2, 0.5],
+            "epochs" : [0, 10, 20]
+        },
         "theta" : 0.5
     },
 
@@ -50,7 +53,7 @@
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 1,
             "batchsize" : 4,
-            "nb_epochs" : 20,
+            "nb_epochs" : 30,
             "print_every_nb_epochs" : 1
         },
 
