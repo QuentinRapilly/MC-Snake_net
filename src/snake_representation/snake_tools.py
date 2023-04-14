@@ -31,9 +31,7 @@ def sample_contour(control_points : torch.tensor, nb_samples : int, basis_functi
 def polar_to_cartesian_cp(c : torch.Tensor, r : torch.Tensor, theta : torch.Tensor) -> torch.Tensor :
 
     theta = (theta*2*torch.pi)/torch.sum(theta, dim=-1, keepdim=True)
-    print(theta)
     theta = torch.cumsum(theta, dim=-1)
-    print(f"r : {r.shape}, theta : {torch.cos(theta).shape}, c : {c[...,0].shape}")
     x = r*torch.cos(theta) + c[...,0][...,None]
     y = r*torch.sin(theta) + c[...,1][...,None]
     cp = torch.stack((x, y)).permute(1,2,0)
