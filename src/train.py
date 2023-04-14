@@ -71,7 +71,7 @@ def train(model, unet_optimizer, mlp_optimizer, train_loader, mask_loss, snake_l
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
 
         if use_polar :
-            reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = 0.5*reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
+            reshaped_cp = polar_to_cartesian_cp(r = 0.5*reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
             print(reshaped_cp.requires_grad)
 
         if predict_dx_dy :
@@ -182,7 +182,7 @@ def test(model, test_loader, mask_loss, snake_loss, theta, gamma, W : int, H : i
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
 
         if use_polar :
-            reshaped_cp = polar_to_cartesian_cp(c = reshaped_cp[...,0], r = 0.5*reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
+            reshaped_cp = polar_to_cartesian_cp(r = 0.5*reshaped_cp[...,1:,0], theta = reshaped_cp[...,1:,1])
 
         if predict_dx_dy :
             M = reshaped_cp.shape[1]
@@ -274,7 +274,7 @@ if __name__ == "__main__" :
     M = snake_config["M"]
     use_polar = model_config["use_polar"]
 
-    M_prime = M+1 if use_polar else M
+    M_prime = M if use_polar else M
 
     W, H = config_dic["data"]["image_size"]
 
