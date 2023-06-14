@@ -10,7 +10,7 @@ class MCSnakeNet(Unet2D_2D):
         self.nb_snake_layers = nb_snake_layers
         self.nb_control_points = nb_control_points
 
-        self.bottleneck_dim = (self.init_channels*self.img_height*self.img_width)//2**(self.nb_conv_layers+1)
+        self.bottleneck_dim = (self.features_start*self.img_height*self.img_width)//2**(self.nb_conv_layers+1)
 
         self.FC_dim = [self.bottleneck_dim] + [4096 for _ in range(nb_snake_layers)] + [2*nb_control_points]
 
