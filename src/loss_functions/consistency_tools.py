@@ -29,6 +29,7 @@ def contour_to_mask(contour_samples : torch.tensor, W : int, H : int, device = "
     v1 = v1_tmp * (v1_tmp[...,1] >= v2_tmp[...,1])[...,None] + v2_tmp * (v1_tmp[...,1] < v2_tmp[...,1])[...,None]
     v2 = v1_tmp * (v1_tmp[...,1] < v2_tmp[...,1])[...,None] + v2_tmp * (v1_tmp[...,1] >= v2_tmp[...,1])[...,None]
 
+
     a = torch.unsqueeze((v1[:,1]+eps)*v2[:,1], 0)
     b = torch.unsqueeze(v1[:,1] + eps + v2[:,1], 0)
     c = torch.unsqueeze(v1[:,0] - v2[:,0],0)
