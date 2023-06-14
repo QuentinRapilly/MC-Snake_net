@@ -319,7 +319,7 @@ if __name__ == "__main__" :
         
         # track hyperparameters and run metadata
         config={
-        "learning_rate": optimizer_config["unet_lr"],
+        "learning_rate": optimizer_config["lr"],
         "architecture": "UNET",
         "dataset": "Texture",
         "epochs": train_config["nb_epochs"]
