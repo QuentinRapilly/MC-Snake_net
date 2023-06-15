@@ -4,15 +4,16 @@ import torch.nn as nn
 
 class MCSnakeNet(Unet2D_2D):
 
-    def __init__(self, img_shape : Tuple[float, float], nb_control_points : int, nb_snake_layers : int, **kwargs):
+    def __init__(self, img_shape : Tuple[float, float], nb_control_points : int, nb_snake_layers : int, hidden_FC_size : int  = 2048, **kwargs):
         super().__init__(**kwargs)
         self.img_height, self.img_width = img_shape
         self.nb_snake_layers = nb_snake_layers
         self.nb_control_points = nb_control_points
+        self.hidden_FC_size = hidden_FC_size
 
         self.bottleneck_dim = (self.features_start*self.img_height*self.img_width)//2**(self.num_layers-1)
 
-        self.FC_dim = [self.bottleneck_dim] + [4096 for _ in range(nb_snake_layers-1)] + [2*nb_control_points]
+        self.FC_dim = [self.bottleneck_dim] + [self.hidden_FC_size for _ in range(nb_snake_layers-1)] + [2*nb_control_points]
 
 
         self.snake_head = nn.ModuleDict({

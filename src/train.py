@@ -287,7 +287,7 @@ if __name__ == "__main__" :
 
     # Initializing the model
     model = MCSnakeNet(num_classes =model_config["num_class"], input_channels=config_dic["data"]["nb_channels"],\
-                       padding_mode="zeros", inner_normalisation='BatchNorm', img_shape=(W,H),\
+                       padding_mode="zeros", inner_normalisation='BatchNorm', hidden_FC_size=model_config["hidden_FC_size"], img_shape=(W,H),\
                         nb_control_points=M_prime, nb_snake_layers=model_config["nb_snake_layers"],\
                             train_bn = True).to(device)
 

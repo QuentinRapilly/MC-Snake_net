@@ -10,6 +10,8 @@
 
         "nb_snake_layers" : 2,
 
+        "hidden_FC_size" : 2048,
+
         "unet_layer" : 5,
 
         "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake",
@@ -24,8 +26,8 @@
     },
 
     "scheduler" : {
-        "gamma" : 0.1,
-        "step_every_nb_epoch" : 15
+        "gamma" : 0.5,
+        "step_every_nb_epoch" : 5
     },
 
     "loss" : {
