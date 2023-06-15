@@ -243,6 +243,9 @@ if __name__ == "__main__" :
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    if device == "cuda" : 
+        torch.cuda.empty_cache()
+
     print(f"Current device : {device}")
 
     parser = argparse.ArgumentParser()
