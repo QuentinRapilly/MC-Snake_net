@@ -69,9 +69,9 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
 
-        if use_polar :
-            reshaped_cp = polar_to_cartesian_cp(r = 0.5*reshaped_cp[...,0], theta = reshaped_cp[...,1])
-            print(reshaped_cp.requires_grad)
+        #if use_polar :
+        #    reshaped_cp = polar_to_cartesian_cp(r = 0.5*reshaped_cp[...,0], theta = reshaped_cp[...,1])
+        #    print(reshaped_cp.requires_grad)
 
         if predict_dx_dy :
             M = reshaped_cp.shape[1]
@@ -335,7 +335,7 @@ if __name__ == "__main__" :
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
                     train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                        snake_loss=snake_loss, gamma=gamma, theta=theta, W=W, H=H, use_polar=use_polar, device = device, verbose=verbose)
+                        snake_loss=snake_loss, gamma=gamma, theta=theta, W=W, H=H, device = device, verbose=verbose)
 
         print_time_dict(epoch_dict)
 

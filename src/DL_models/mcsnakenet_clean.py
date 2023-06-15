@@ -12,7 +12,7 @@ class MCSnakeNet(Unet2D_2D):
 
         self.bottleneck_dim = (self.features_start*self.img_height*self.img_width)//2**(self.num_layers-1)
 
-        self.FC_dim = [self.bottleneck_dim] + [4096 for _ in range(nb_snake_layers)] + [2*nb_control_points]
+        self.FC_dim = [self.bottleneck_dim] + [4096 for _ in range(nb_snake_layers-1)] + [2*nb_control_points]
 
 
         self.snake_head = nn.ModuleDict({
