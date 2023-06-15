@@ -17,7 +17,8 @@ class MCSnakeNet(Unet2D_2D):
 
         self.snake_head = nn.ModuleDict({
             #"conv_1x1" : nn.Conv2d(in_channels=self.bottleneck_nb_features, out_channels=1, kernel_size=1),
-            "FC" : nn.ModuleList([nn.Linear(self.FC_dim[i], self.FC_dim[i+1]) for i in range(self.nb_snake_layers)])
+            "FC" : nn.ModuleList([nn.Sequential(nn.Linear(self.FC_dim[i], self.FC_dim[i+1]),nn.BatchNorm1d(self.FC_dim[i+1]))\
+                                  for i in range(self.nb_snake_layers)])
         })
 
         self.flatten = nn.Flatten()
