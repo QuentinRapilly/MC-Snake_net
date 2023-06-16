@@ -8,9 +8,9 @@
 
         "num_class" : 1,
 
-        "nb_snake_layers" : 2,
+        "nb_snake_layers" : 3,
 
-        "hidden_FC_size" : 1024,
+        "hidden_FC_size" : 256,
 
         "unet_layer" : 5,
 
@@ -21,20 +21,20 @@
     },
 
     "optimizer" : {
-        "lr" : 1e-3,
+        "lr" : 5e-4,
         "weight_decay" : 0.001
     },
 
     "scheduler" : {
         "gamma" : 0.5,
-        "step_every_nb_epoch" : 5
+        "step_every_nb_epoch" : 1000
     },
 
     "loss" : {
         "mask_loss" : "dice",
         "apply_sigmoid" : false,
         "gamma" : 0.0,
-        "theta" : 0.5
+        "theta" : 0.0
     },
 
 
@@ -51,15 +51,15 @@
         "train_set" : {
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 0,
-            "batchsize" : 2,
-            "nb_epochs" : 50,
+            "batchsize" : 8,
+            "nb_epochs" : 500,
             "print_every_nb_epochs" : 1
         },
 
         "test_set" : {
             "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
             "set_index" : 0,
-            "batchsize" : 2
+            "batchsize" : 8
         }  
     }
 }
