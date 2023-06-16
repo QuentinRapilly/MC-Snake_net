@@ -64,7 +64,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         
         # we want our control points to be in [0;1] in a first time so we apply sigmoid, 
         # then we will be able to rescale them in WxH (our images shape)
-        snake_cp = sigmoid(snake_cp)
+        #snake_cp = sigmoid(snake_cp)
 
         # Control points format (2M) -> (M,2)
         reshaped_cp = torch.reshape(snake_cp, (snake_cp.shape[0], snake_cp.shape[1]//2, 2))
@@ -85,8 +85,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         # Transforming GT mask and predicted mask into contour for loss computation
         with time_manager(time_dict, "masks to contours"):
             with torch.no_grad():
-                GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv for mask in GT_masks]
-                classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv for mask in classic_mask]
+                GT_contour = [mask_to_contour(mask).to(device)*rescaling_inv - 0.5 for mask in GT_masks]
+                classic_contour = [mask_to_contour((mask>0.5)).to(device)*rescaling_inv - 0.5 for mask in classic_mask]
 
         # Sampling the predicted snake to compute the snake loss
         with time_manager(time_dict, "sampling contours"):
@@ -97,7 +97,7 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
         # Creating mask form contour predicted by the snake part
         with time_manager(time_dict, "contours to masks"):
             with torch.no_grad():
-                snake_mask = torch.stack([contour_to_mask(contour*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
+                snake_mask = torch.stack([contour_to_mask((contour+0.5)*rescaling_vect, W, H, device = device) for contour in snake_for_mask])
 
         # Computing the different part of the loss then the global loss
         with time_manager(time_dict, "loss computation"):
@@ -128,8 +128,8 @@ def train(model, optimizer, train_loader, mask_loss, snake_loss, theta, gamma,\
             img_dict["images"] += [torch.squeeze(imgs[i]).detach().cpu() for i in range(B)]
             img_dict["GT"] += [GT_masks[i].detach().cpu() for i in range(B)]
             img_dict["masks"] += [sigmoid(classic_mask[i]).detach().cpu() for i in range(B)]
-            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), (GT_contour[i]*rescaling_vect).detach().cpu(),(snake_for_mask[i]*rescaling_vect).detach().cpu(),\
-                                    (reshaped_cp[i]*rescaling_vect).detach().cpu()) for i in range(B)]
+            img_dict["snakes"] += [(GT_masks[i].detach().cpu(), ((GT_contour[i]+0.5)*rescaling_vect).detach().cpu(),((snake_for_mask[i]+0.5)*rescaling_vect).detach().cpu(),\
+                                    ((reshaped_cp[i]+0.5)*rescaling_vect).detach().cpu()) for i in range(B)]
     
     if verbose :
         print_time_dict(time_dict)
