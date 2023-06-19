@@ -1,7 +1,8 @@
 {
     "settings" : {
         "verbose" : true,
-        "test_every_nb_epochs" : 10
+        "test_every_nb_epochs" : 10,
+        "nb_batch_to_plot" : 2
     },
 
     "model" : {

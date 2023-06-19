@@ -266,6 +266,7 @@ if __name__ == "__main__" :
 
     verbose = settings_config["verbose"]
     test_every_nb_epochs = settings_config["test_every_nb_epochs"]
+    nb_batch_to_plot = settings_config["nb_batch_to_plot"]
 
     model_config = config_dic["model"]
     optimizer_config = config_dic["optimizer"]
@@ -338,7 +339,7 @@ if __name__ == "__main__" :
         with time_manager(epoch_dict, f"epoch {epoch}"):
             loss, consistency_mask_loss, consistency_snake_loss, reference_mask_loss, reference_snake_loss, img_dict = \
                     train(model, optimizer, train_loader, mask_loss=mask_loss, apply_sigmoid=apply_sigmoid,\
-                        snake_loss=snake_loss, gamma=gamma, theta=theta, W=W, H=H, device = device, verbose=verbose)
+                        snake_loss=snake_loss, gamma=gamma, theta=theta, W=W, H=H, device = device, nb_batch_to_plot=nb_batch_to_plot, verbose=verbose)
 
         print_time_dict(epoch_dict)
 
