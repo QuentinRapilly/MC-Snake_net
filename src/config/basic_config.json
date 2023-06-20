@@ -2,45 +2,38 @@
     "settings" : {
         "verbose" : true,
         "test_every_nb_epochs" : 10,
-        "nb_batch_to_plot" : 2
+        "nb_batch_to_plot" : 2,
+        "nb_epochs" : 50,
+        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake"
     },
 
     "model" : {
-
-        "num_class" : 1,
-
-        "nb_snake_layers" : 3,
-
+        "num_classes" : 1,
+        "nb_snake_layers" : 1,
         "hidden_FC_size" : 256,
-
-        "unet_layer" : 5,
-
-        "save_path" : "/net/serpico-fs2/qrapilly/model_storage/MC-snake",
-
-        "use_polar" : false
-
+        "unet_layer" : 5
     },
 
     "optimizer" : {
-        "lr" : 5e-4,
-        "weight_decay" : 0.001
+        "lr" : 5e-4
     },
 
     "scheduler" : {
         "gamma" : 0.5,
-        "step_every_nb_epoch" : 1000
+        "step_size" : 1000
     },
 
     "loss" : {
-        "mask_loss" : "dice",
-        "apply_sigmoid" : false,
+        "which_mask_loss" : "dice",
+        "sigmoid_on_proba" : false,
+        "sigmoid_on_cp" : true,
         "gamma" : 0.0,
-        "theta" : 0.0
+        "theta" : 0.5
     },
 
 
     "active_contour" : {
-        "M" : 6
+        "M" : 4
     },
 
     "data" : {
@@ -50,17 +43,21 @@
         "image_size" : [512,512],
 
         "train_set" : {
-            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
-            "set_index" : 0,
-            "batchsize" : 8,
-            "nb_epochs" : 500,
-            "print_every_nb_epochs" : 1
+            "path" : "/net/serpico-fs2/qrapilly/data/Texture",
+            "subset" : 1
+        },
+
+        "train_loader" :{
+            "batch_size" : 8
         },
 
         "test_set" : {
-            "path_to_data" : "/net/serpico-fs2/qrapilly/data/Texture",
-            "set_index" : 0,
-            "batchsize" : 8
-        }  
+            "path" : "/net/serpico-fs2/qrapilly/data/Texture",
+            "subset" : 2
+        },
+
+        "test_loader" : {
+            "batch_size" : 8
+        }
     }
 }
